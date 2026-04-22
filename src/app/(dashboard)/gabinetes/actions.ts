@@ -5,13 +5,21 @@ import { z } from 'zod';
 
 import { createClient } from '@/lib/supabase/server';
 
+export const GABINETE_FIELD_NAMES = {
+  nome: 'nome',
+  esfera: 'esfera',
+  orgaoCasaLegislativa: 'orgao_casa_legislativa',
+} as const;
+
 const gabineteSchema = z.object({
-  nome: z.string().trim().min(1, 'Nome é obrigatório.'),
-  esfera: z.enum(['municipal', 'estadual', 'federal'], {
+  [GABINETE_FIELD_NAMES.nome]: z.string().trim().min(1, 'Nome é obrigatório.'),
+  [GABINETE_FIELD_NAMES.esfera]: z.enum(['municipal', 'estadual', 'federal'], {
     errorMap: () => ({ message: 'Esfera inválida.' }),
   }),
-  orgao_casa_legislativa: z.string().trim().min(1, 'Órgão/Casa legislativa é obrigatório.'),
+  [GABINETE_FIELD_NAMES.orgaoCasaLegislativa]: z.string().trim().min(1, 'Órgão/Casa legislativa é obrigatório.'),
 });
+
+type GabineteFormValues = z.infer<typeof gabineteSchema>;
 
 export type CreateGabineteState = {
   success?: string;
@@ -28,9 +36,9 @@ export async function createGabinete(
   formData: FormData,
 ): Promise<CreateGabineteState> {
   const parsed = gabineteSchema.safeParse({
-    nome: String(formData.get('nome') ?? ''),
-    esfera: String(formData.get('esfera') ?? ''),
-    orgao_casa_legislativa: String(formData.get('orgao_casa_legislativa') ?? ''),
+    [GABINETE_FIELD_NAMES.nome]: String(formData.get(GABINETE_FIELD_NAMES.nome) ?? ''),
+    [GABINETE_FIELD_NAMES.esfera]: String(formData.get(GABINETE_FIELD_NAMES.esfera) ?? ''),
+    [GABINETE_FIELD_NAMES.orgaoCasaLegislativa]: String(formData.get(GABINETE_FIELD_NAMES.orgaoCasaLegislativa) ?? ''),
   });
 
   if (!parsed.success) {
@@ -40,14 +48,25 @@ export async function createGabinete(
     };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.from('gabinetes').insert(parsed.data);
+  try {
+    const supabase = await createClient();
+    const gabineteToInsert: GabineteFormValues = {
+      nome: parsed.data.nome,
+      esfera: parsed.data.esfera,
+      orgao_casa_legislativa: parsed.data.orgao_casa_legislativa,
+    };
 
-  if (error) {
-    return { error: `Não foi possível criar o gabinete: ${error.message}` };
+    const { error } = await supabase.schema('public').from('gabinetes').insert(gabineteToInsert);
+
+    if (error) {
+      return { error: `Não foi possível criar o gabinete: ${error.message}` };
+    }
+
+    revalidatePath('/gabinetes');
+
+    return { success: 'Gabinete criado com sucesso.' };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erro inesperado ao criar gabinete.';
+    return { error: `Não foi possível criar o gabinete: ${message}` };
   }
-
-  revalidatePath('/gabinetes');
-
-  return { success: 'Gabinete criado com sucesso.' };
 }
