@@ -19,7 +19,118 @@ create type public.acao_auditoria as enum ('create', 'update', 'delete', 'status
 create type public.tipo_operacao_ia as enum ('gerar_minuta', 'revisar_texto', 'sugerir_emenda', 'sugerir_justificativa');
 
 -- ---------------------------------------------------------------------------
--- Base utility functions
+-- Tables
+-- ---------------------------------------------------------------------------
+create table public.users (
+  id uuid primary key references auth.users(id) on delete cascade,
+  nome text not null,
+  email text not null unique,
+  papel_global public.papel_global not null default 'usuario',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.gabinetes (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  esfera public.esfera_legislativa not null,
+  orgao_casa_legislativa text not null,
+  status public.status_gabinete not null default 'ativo',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.gabinetes_membros (
+  id uuid primary key default gen_random_uuid(),
+  gabinete_id uuid not null references public.gabinetes(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
+  papel_no_gabinete public.papel_no_gabinete not null,
+  ativo boolean not null default true,
+  created_at timestamptz not null default now(),
+  unique (gabinete_id, user_id)
+);
+
+create index idx_gabinetes_membros_gabinete_id on public.gabinetes_membros(gabinete_id);
+create index idx_gabinetes_membros_user_id on public.gabinetes_membros(user_id);
+
+create table public.projetos_legislativos (
+  id uuid primary key default gen_random_uuid(),
+  gabinete_id uuid not null references public.gabinetes(id) on delete cascade,
+  titulo text not null,
+  ementa text,
+  status_fluxo public.status_fluxo_projeto not null default 'rascunho',
+  tipo public.tipo_projeto_legislativo not null default 'PL',
+  autor_responsavel_id uuid not null references public.users(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index idx_projetos_legislativos_gabinete_id on public.projetos_legislativos(gabinete_id);
+create index idx_projetos_legislativos_autor_id on public.projetos_legislativos(autor_responsavel_id);
+
+create table public.projeto_versoes (
+  id uuid primary key default gen_random_uuid(),
+  projeto_id uuid not null references public.projetos_legislativos(id) on delete cascade,
+  numero_versao integer not null check (numero_versao > 0),
+  conteudo_texto text not null,
+  resumo_alteracoes text not null,
+  criado_por uuid not null references public.users(id),
+  origem public.origem_versao not null default 'manual',
+  created_at timestamptz not null default now(),
+  unique (projeto_id, numero_versao)
+);
+
+create index idx_projeto_versoes_projeto_id on public.projeto_versoes(projeto_id);
+
+create table public.comentarios_tecnicos (
+  id uuid primary key default gen_random_uuid(),
+  projeto_id uuid not null references public.projetos_legislativos(id) on delete cascade,
+  versao_id uuid not null references public.projeto_versoes(id) on delete cascade,
+  autor_id uuid not null references public.users(id),
+  trecho_referencia text,
+  comentario text not null,
+  tipo public.tipo_comentario_tecnico not null,
+  resolvido boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index idx_comentarios_tecnicos_projeto_id on public.comentarios_tecnicos(projeto_id);
+create index idx_comentarios_tecnicos_versao_id on public.comentarios_tecnicos(versao_id);
+
+create table public.auditoria_eventos (
+  id bigserial primary key,
+  entidade public.entidade_auditoria not null,
+  entidade_id uuid not null,
+  acao public.acao_auditoria not null,
+  actor_user_id uuid references public.users(id),
+  payload_diff jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index idx_auditoria_eventos_entidade on public.auditoria_eventos(entidade, entidade_id);
+create index idx_auditoria_eventos_actor on public.auditoria_eventos(actor_user_id);
+create index idx_auditoria_eventos_created_at on public.auditoria_eventos(created_at desc);
+
+create table public.ia_interacoes (
+  id uuid primary key default gen_random_uuid(),
+  projeto_id uuid not null references public.projetos_legislativos(id) on delete cascade,
+  versao_id uuid references public.projeto_versoes(id) on delete set null,
+  user_id uuid not null references public.users(id),
+  tipo_operacao public.tipo_operacao_ia not null,
+  prompt_resumo text,
+  resposta_resumo text,
+  tokens_input integer,
+  tokens_output integer,
+  custo_estimado numeric(12,4),
+  created_at timestamptz not null default now()
+);
+
+create index idx_ia_interacoes_projeto_id on public.ia_interacoes(projeto_id);
+create index idx_ia_interacoes_user_id on public.ia_interacoes(user_id);
+
+-- ---------------------------------------------------------------------------
+-- Security helper functions
 -- ---------------------------------------------------------------------------
 create or replace function public.set_updated_at()
 returns trigger
@@ -63,131 +174,23 @@ as $$
 $$;
 
 -- ---------------------------------------------------------------------------
--- Tables
+-- Triggers
 -- ---------------------------------------------------------------------------
-create table public.users (
-  id uuid primary key references auth.users(id) on delete cascade,
-  nome text not null,
-  email text not null unique,
-  papel_global public.papel_global not null default 'usuario',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
 create trigger trg_users_updated_at
 before update on public.users
 for each row execute function public.set_updated_at();
-
-create table public.gabinetes (
-  id uuid primary key default gen_random_uuid(),
-  nome text not null,
-  esfera public.esfera_legislativa not null,
-  orgao_casa_legislativa text not null,
-  status public.status_gabinete not null default 'ativo',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
 
 create trigger trg_gabinetes_updated_at
 before update on public.gabinetes
 for each row execute function public.set_updated_at();
 
-create table public.gabinetes_membros (
-  id uuid primary key default gen_random_uuid(),
-  gabinete_id uuid not null references public.gabinetes(id) on delete cascade,
-  user_id uuid not null references public.users(id) on delete cascade,
-  papel_no_gabinete public.papel_no_gabinete not null,
-  ativo boolean not null default true,
-  created_at timestamptz not null default now(),
-  unique (gabinete_id, user_id)
-);
-
-create index idx_gabinetes_membros_gabinete_id on public.gabinetes_membros(gabinete_id);
-create index idx_gabinetes_membros_user_id on public.gabinetes_membros(user_id);
-
-create table public.projetos_legislativos (
-  id uuid primary key default gen_random_uuid(),
-  gabinete_id uuid not null references public.gabinetes(id) on delete cascade,
-  titulo text not null,
-  ementa text,
-  status_fluxo public.status_fluxo_projeto not null default 'rascunho',
-  tipo public.tipo_projeto_legislativo not null default 'PL',
-  autor_responsavel_id uuid not null references public.users(id),
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create index idx_projetos_legislativos_gabinete_id on public.projetos_legislativos(gabinete_id);
-create index idx_projetos_legislativos_autor_id on public.projetos_legislativos(autor_responsavel_id);
-
 create trigger trg_projetos_legislativos_updated_at
 before update on public.projetos_legislativos
 for each row execute function public.set_updated_at();
 
-create table public.projeto_versoes (
-  id uuid primary key default gen_random_uuid(),
-  projeto_id uuid not null references public.projetos_legislativos(id) on delete cascade,
-  numero_versao integer not null check (numero_versao > 0),
-  conteudo_texto text not null,
-  resumo_alteracoes text not null,
-  criado_por uuid not null references public.users(id),
-  origem public.origem_versao not null default 'manual',
-  created_at timestamptz not null default now(),
-  unique (projeto_id, numero_versao)
-);
-
-create index idx_projeto_versoes_projeto_id on public.projeto_versoes(projeto_id);
-
-create table public.comentarios_tecnicos (
-  id uuid primary key default gen_random_uuid(),
-  projeto_id uuid not null references public.projetos_legislativos(id) on delete cascade,
-  versao_id uuid not null references public.projeto_versoes(id) on delete cascade,
-  autor_id uuid not null references public.users(id),
-  trecho_referencia text,
-  comentario text not null,
-  tipo public.tipo_comentario_tecnico not null,
-  resolvido boolean not null default false,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create index idx_comentarios_tecnicos_projeto_id on public.comentarios_tecnicos(projeto_id);
-create index idx_comentarios_tecnicos_versao_id on public.comentarios_tecnicos(versao_id);
-
 create trigger trg_comentarios_tecnicos_updated_at
 before update on public.comentarios_tecnicos
 for each row execute function public.set_updated_at();
-
-create table public.auditoria_eventos (
-  id bigserial primary key,
-  entidade public.entidade_auditoria not null,
-  entidade_id uuid not null,
-  acao public.acao_auditoria not null,
-  actor_user_id uuid references public.users(id),
-  payload_diff jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now()
-);
-
-create index idx_auditoria_eventos_entidade on public.auditoria_eventos(entidade, entidade_id);
-create index idx_auditoria_eventos_actor on public.auditoria_eventos(actor_user_id);
-create index idx_auditoria_eventos_created_at on public.auditoria_eventos(created_at desc);
-
-create table public.ia_interacoes (
-  id uuid primary key default gen_random_uuid(),
-  projeto_id uuid not null references public.projetos_legislativos(id) on delete cascade,
-  versao_id uuid references public.projeto_versoes(id) on delete set null,
-  user_id uuid not null references public.users(id),
-  tipo_operacao public.tipo_operacao_ia not null,
-  prompt_resumo text,
-  resposta_resumo text,
-  tokens_input integer,
-  tokens_output integer,
-  custo_estimado numeric(12,4),
-  created_at timestamptz not null default now()
-);
-
-create index idx_ia_interacoes_projeto_id on public.ia_interacoes(projeto_id);
-create index idx_ia_interacoes_user_id on public.ia_interacoes(user_id);
 
 -- ---------------------------------------------------------------------------
 -- Audit logging functions and triggers
