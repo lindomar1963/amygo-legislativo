@@ -1,16 +1,32 @@
 'use client';
 
 import { useActionState, useEffect, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
 
-import { createGabinete, type CreateGabineteState } from '@/app/(dashboard)/gabinetes/actions';
+import {
+  createGabinete,
+  GABINETE_FIELD_NAMES,
+  type CreateGabineteState,
+} from '@/app/(dashboard)/gabinetes/actions';
 
 const initialState: CreateGabineteState = {};
+const gabineteFormId = 'create-gabinete-form';
+
+function SubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button className="button" type="submit" form={gabineteFormId} disabled={pending}>
+      {pending ? 'Criando gabinete...' : 'Criar gabinete'}
+    </button>
+  );
+}
 
 export function GabineteForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
-  const [state, action, pending] = useActionState(createGabinete, initialState);
+  const [state, action] = useActionState(createGabinete, initialState);
 
   useEffect(() => {
     if (state.success) {
@@ -20,16 +36,28 @@ export function GabineteForm() {
   }, [router, state.success]);
 
   return (
-    <form ref={formRef} action={action} className="card grid" style={{ gap: '0.75rem' }}>
+    <form id={gabineteFormId} ref={formRef} action={action} className="card grid" style={{ gap: '0.75rem' }}>
       <h2>Novo gabinete</h2>
 
       <div>
-        <input className="input" name="nome" placeholder="Nome do gabinete" required disabled={pending} />
+        <input
+          className="input"
+          name={GABINETE_FIELD_NAMES.nome}
+          placeholder="Nome do gabinete"
+          required
+          aria-invalid={Boolean(state.fieldErrors?.nome)}
+        />
         {state.fieldErrors?.nome ? <p style={{ color: '#b91c1c' }}>{state.fieldErrors.nome[0]}</p> : null}
       </div>
 
       <div>
-        <select className="select" name="esfera" defaultValue="municipal" required disabled={pending}>
+        <select
+          className="select"
+          name={GABINETE_FIELD_NAMES.esfera}
+          defaultValue="municipal"
+          required
+          aria-invalid={Boolean(state.fieldErrors?.esfera)}
+        >
           <option value="municipal">Municipal</option>
           <option value="estadual">Estadual</option>
           <option value="federal">Federal</option>
@@ -40,22 +68,22 @@ export function GabineteForm() {
       <div>
         <input
           className="input"
-          name="orgao_casa_legislativa"
+          name={GABINETE_FIELD_NAMES.orgaoCasaLegislativa}
           placeholder="Órgão/Casa legislativa"
           required
-          disabled={pending}
+          aria-invalid={Boolean(state.fieldErrors?.orgao_casa_legislativa)}
         />
         {state.fieldErrors?.orgao_casa_legislativa ? (
           <p style={{ color: '#b91c1c' }}>{state.fieldErrors.orgao_casa_legislativa[0]}</p>
         ) : null}
       </div>
 
-      {state.error ? <p style={{ color: '#b91c1c' }}>{state.error}</p> : null}
-      {state.success ? <p style={{ color: '#166534' }}>{state.success}</p> : null}
+      <div aria-live="polite" role="status">
+        {state.error ? <p style={{ color: '#b91c1c' }}>{state.error}</p> : null}
+        {state.success ? <p style={{ color: '#166534' }}>{state.success}</p> : null}
+      </div>
 
-      <button className="button" type="submit" disabled={pending}>
-        {pending ? 'Criando gabinete...' : 'Criar gabinete'}
-      </button>
+      <SubmitButton />
     </form>
   );
 }
