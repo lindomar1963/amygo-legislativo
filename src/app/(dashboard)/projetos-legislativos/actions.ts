@@ -23,6 +23,7 @@ const projetoSchema = z.object({
 export type CreateProjetoState = {
   success?: string;
   error?: string;
+  projetoId?: string;
   fieldErrors?: {
     gabinete_id?: string[];
     titulo?: string[];
@@ -88,14 +89,21 @@ export async function createProjeto(
     autor_responsavel_id: user.id
   };
 
-  const { error: projetoError } = await admin.from('projetos_legislativos').insert(projetoToInsert);
+  const { data: projeto, error: projetoError } = await admin
+    .from('projetos_legislativos')
+    .insert(projetoToInsert)
+    .select('id')
+    .single();
 
-  if (projetoError) {
-    return { error: `Nao foi possivel criar o projeto: ${projetoError.message}` };
+  if (projetoError || !projeto) {
+    return { error: `Nao foi possivel criar o projeto: ${projetoError?.message ?? 'resposta sem projeto criado'}` };
   }
 
   revalidatePath('/dashboard');
   revalidatePath('/projetos-legislativos');
 
-  return { success: 'Projeto legislativo criado com sucesso.' };
+  return {
+    success: 'Projeto legislativo criado com sucesso.',
+    projetoId: projeto.id
+  };
 }

@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 import { createProjeto, type CreateProjetoState } from '@/app/(dashboard)/projetos-legislativos/actions';
 import { PROJETO_FIELD_NAMES, PROJETO_TIPOS } from '@/lib/projetos/form-fields';
@@ -104,7 +105,17 @@ export function ProjetoForm({ gabinetes }: { gabinetes: Gabinete[] }) {
 
       <div aria-live="polite" role="status">
         {state.error ? <p style={{ color: '#b91c1c' }}>{state.error}</p> : null}
-        {state.success ? <p style={{ color: '#166534' }}>{state.success}</p> : null}
+        {state.success ? (
+          <div className="card" style={{ borderColor: '#86efac', background: '#f0fdf4' }}>
+            <p style={{ color: '#166534', marginTop: 0 }}>{state.success}</p>
+            <p className="muted">Proximo passo: abra o projeto para trabalhar na minuta, versoes e revisoes.</p>
+            {state.projetoId ? (
+              <Link className="button" href={`/projetos-legislativos/${state.projetoId}`}>
+                Abrir projeto
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <SubmitButton disabled={!hasGabinetes} />

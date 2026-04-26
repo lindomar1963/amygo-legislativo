@@ -22,6 +22,9 @@ export function ProjetosList({ projetos }: { projetos: Projeto[] }) {
               {projeto.tipo} • {projeto.status_fluxo}
             </p>
             <p style={{ margin: 0 }}>{projeto.ementa ?? 'Sem ementa.'}</p>
+            <Link className="button" href={`/projetos-legislativos/${projeto.id}`} style={{ marginTop: '0.75rem', display: 'inline-block' }}>
+              Abrir projeto
+            </Link>
           </li>
         ))}
       </ul>
