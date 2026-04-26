@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation';
 
 import {
   createGabinete,
-  GABINETE_FIELD_NAMES,
   type CreateGabineteState
 } from '@/app/(dashboard)/gabinetes/actions';
+import { GABINETE_FIELD_NAMES } from '@/lib/gabinetes/form-fields';
 
 const initialState: CreateGabineteState = {};
 const gabineteFormId = 'create-gabinete-form';

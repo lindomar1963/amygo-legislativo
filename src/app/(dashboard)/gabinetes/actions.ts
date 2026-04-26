@@ -3,17 +3,12 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+import { GABINETE_FIELD_NAMES } from '@/lib/gabinetes/form-fields';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import type { Database } from '@/types/database';
 
 type GabineteInsert = Database['public']['Tables']['gabinetes']['Insert'];
-
-export const GABINETE_FIELD_NAMES = {
-  nome: 'nome',
-  esfera: 'esfera',
-  orgaoCasaLegislativa: 'orgao_casa_legislativa'
-} as const;
 
 const gabineteSchema = z.object({
   [GABINETE_FIELD_NAMES.nome]: z.string().trim().min(1, 'Nome e obrigatorio.'),
