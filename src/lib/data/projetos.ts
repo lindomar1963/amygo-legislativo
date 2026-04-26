@@ -40,8 +40,15 @@ export async function getProjetoDetalhe(id: string) {
     throw new Error(`Erro ao carregar projeto: ${projeto.error.message}`);
   }
 
+  const gabinete = await supabase
+    .from('gabinetes')
+    .select('id, nome, esfera, orgao_casa_legislativa')
+    .eq('id', projeto.data.gabinete_id)
+    .single();
+
   return {
     projeto: projeto.data,
+    gabinete: gabinete.data,
     versoes: versoes.data ?? [],
     comentarios: comentarios.data ?? []
   };
