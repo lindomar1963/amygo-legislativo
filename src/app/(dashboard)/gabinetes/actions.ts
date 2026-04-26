@@ -74,7 +74,7 @@ export async function createGabinete(
     status: 'ativo'
   };
 
-  const { data: gabinete, error: gabineteError } = await supabase
+  const { data: gabinete, error: gabineteError } = await admin
     .from('gabinetes')
     .insert(gabineteToInsert)
     .select('id')
