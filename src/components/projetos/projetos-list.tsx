@@ -11,6 +11,7 @@ export function ProjetosList({ projetos }: { projetos: Projeto[] }) {
   return (
     <div className="card">
       <h2>Projetos Legislativos</h2>
+      {projetos.length === 0 ? <p className="muted">Nenhum projeto legislativo cadastrado.</p> : null}
       <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {projetos.map((projeto) => (
           <li key={projeto.id} style={{ borderTop: '1px solid var(--border)', padding: '0.75rem 0' }}>

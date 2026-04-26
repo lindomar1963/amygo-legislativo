@@ -6,10 +6,10 @@ import { z } from 'zod';
 import { GABINETE_FIELD_NAMES } from '@/lib/gabinetes/form-fields';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
+import { ensureUserProfile } from '@/lib/users/ensure-user-profile';
 import type { Database } from '@/types/database';
 
 type GabineteInsert = Database['public']['Tables']['gabinetes']['Insert'];
-type UserInsert = Database['public']['Tables']['users']['Insert'];
 
 const gabineteSchema = z.object({
   [GABINETE_FIELD_NAMES.nome]: z.string().trim().min(1, 'Nome e obrigatorio.'),
@@ -62,30 +62,10 @@ export async function createGabinete(
   let admin;
   try {
     admin = createAdminClient();
+    await ensureUserProfile(admin, user);
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : 'Nao foi possivel preparar a criacao do gabinete.'
-    };
-  }
-
-  const userProfile: UserInsert = {
-    id: user.id,
-    email: user.email ?? `${user.id}@amygo.local`,
-    nome:
-      typeof user.user_metadata?.nome === 'string'
-        ? user.user_metadata.nome
-        : typeof user.user_metadata?.name === 'string'
-          ? user.user_metadata.name
-          : user.email ?? 'Usuario Amygo'
-  };
-
-  const { error: userProfileError } = await admin.from('users').upsert(userProfile, {
-    onConflict: 'id'
-  });
-
-  if (userProfileError) {
-    return {
-      error: `Nao foi possivel preparar o usuario: ${userProfileError.message}`
     };
   }
 

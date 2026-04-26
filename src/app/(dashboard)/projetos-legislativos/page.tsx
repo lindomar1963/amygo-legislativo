@@ -1,8 +1,10 @@
+import { ProjetoForm } from '@/components/projetos/projeto-form';
 import { ProjetosList } from '@/components/projetos/projetos-list';
+import { getGabinetes } from '@/lib/data/gabinetes';
 import { getProjetos } from '@/lib/data/projetos';
 
 export default async function ProjetosLegislativosPage() {
-  const projetos = await getProjetos();
+  const [gabinetes, projetos] = await Promise.all([getGabinetes(), getProjetos()]);
 
   return (
     <main className="grid" style={{ gap: '1rem' }}>
@@ -11,6 +13,7 @@ export default async function ProjetosLegislativosPage() {
         <p className="muted">Listagem central de projetos por gabinete, tipo e status de tramitação interna.</p>
       </header>
 
+      <ProjetoForm gabinetes={gabinetes} />
       <ProjetosList projetos={projetos} />
     </main>
   );
