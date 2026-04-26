@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 
 import { TechnicalComments } from '@/components/comentarios/technical-comments';
 import { LegislativeResearchPanel } from '@/components/projetos/legislative-research-panel';
+import { NormasBibliotecaPanel } from '@/components/projetos/normas-biblioteca-panel';
 import { VersionHistory } from '@/components/versionamento/version-history';
 import { getProjetoDetalhe } from '@/lib/data/projetos';
 
@@ -11,7 +12,8 @@ export default async function ProjetoDetalhePage({ params }: Params) {
   const { id } = await params;
 
   try {
-    const { projeto, gabinete, versoes, comentarios } = await getProjetoDetalhe(id);
+    const { projeto, gabinete, normasRelacionadas, referencias, referenciasSetupError, versoes, comentarios } =
+      await getProjetoDetalhe(id);
 
     return (
       <main className="grid" style={{ gap: '1rem' }}>
@@ -24,6 +26,12 @@ export default async function ProjetoDetalhePage({ params }: Params) {
         </section>
 
         <LegislativeResearchPanel projeto={projeto} gabinete={gabinete} />
+        <NormasBibliotecaPanel
+          projetoId={projeto.id}
+          normas={normasRelacionadas}
+          referencias={referencias}
+          setupError={referenciasSetupError}
+        />
         <VersionHistory versoes={versoes} />
         <TechnicalComments comentarios={comentarios} />
       </main>

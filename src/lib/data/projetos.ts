@@ -1,4 +1,73 @@
 import { createClient } from '@/lib/supabase/server';
+import type { Database } from '@/types/database';
+
+type ProjetoDetalhe = Pick<
+  Database['public']['Tables']['projetos_legislativos']['Row'],
+  'titulo' | 'ementa' | 'tipo'
+>;
+
+type BibliotecaNorma = Pick<
+  Database['public']['Tables']['biblioteca_normas']['Row'],
+  | 'id'
+  | 'titulo'
+  | 'esfera'
+  | 'uf'
+  | 'municipio'
+  | 'orgao_origem'
+  | 'tipo'
+  | 'numero'
+  | 'ano'
+  | 'tema'
+  | 'ementa'
+  | 'texto_integral'
+  | 'fonte_url'
+>;
+
+const stopWords = new Set([
+  'para',
+  'sobre',
+  'como',
+  'pela',
+  'pelo',
+  'dos',
+  'das',
+  'com',
+  'uma',
+  'que',
+  'estado',
+  'amazonas',
+  'projeto',
+  'lei'
+]);
+
+function normalizeText(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function extractTerms(projeto: ProjetoDetalhe) {
+  return normalizeText([projeto.titulo, projeto.ementa, projeto.tipo].filter(Boolean).join(' '))
+    .split(/[^a-z0-9]+/)
+    .filter((term) => term.length > 3 && !stopWords.has(term))
+    .slice(0, 12);
+}
+
+function scoreNorma(norma: BibliotecaNorma, terms: string[]) {
+  const title = normalizeText(norma.titulo);
+  const tema = normalizeText(norma.tema ?? '');
+  const ementa = normalizeText(norma.ementa ?? '');
+  const texto = normalizeText(norma.texto_integral ?? '');
+
+  return terms.reduce((score, term) => {
+    if (title.includes(term)) return score + 5;
+    if (tema.includes(term)) return score + 4;
+    if (ementa.includes(term)) return score + 3;
+    if (texto.includes(term)) return score + 1;
+    return score;
+  }, 0);
+}
 
 export async function getProjetos() {
   const supabase = await createClient();
@@ -46,9 +115,33 @@ export async function getProjetoDetalhe(id: string) {
     .eq('id', projeto.data.gabinete_id)
     .single();
 
+  const [normas, referencias] = await Promise.all([
+    supabase
+      .from('biblioteca_normas')
+      .select('id, titulo, esfera, uf, municipio, orgao_origem, tipo, numero, ano, tema, ementa, texto_integral, fonte_url')
+      .limit(100),
+    supabase
+      .from('projeto_normas_referencias')
+      .select('id, norma_id, created_at')
+      .eq('projeto_id', id)
+  ]);
+
+  const terms = extractTerms(projeto.data);
+  const normasRelacionadas = (normas.data ?? [])
+    .map((norma) => ({ ...norma, score: scoreNorma(norma, terms) }))
+    .filter((norma) => norma.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 6);
+
   return {
     projeto: projeto.data,
     gabinete: gabinete.data,
+    normasRelacionadas,
+    referencias: referencias.error ? [] : referencias.data ?? [],
+    referenciasSetupError:
+      referencias.error && referencias.error.message.includes('projeto_normas_referencias')
+        ? referencias.error.message
+        : null,
     versoes: versoes.data ?? [],
     comentarios: comentarios.data ?? []
   };

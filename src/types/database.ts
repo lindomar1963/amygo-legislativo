@@ -121,6 +121,22 @@ export type Database = {
           autor_responsavel_id: string;
         }
       >;
+      projeto_normas_referencias: Table<
+        {
+          id: string;
+          projeto_id: string;
+          norma_id: string;
+          observacao: string | null;
+          created_by: string;
+          created_at: string;
+        },
+        {
+          projeto_id: string;
+          norma_id: string;
+          observacao?: string | null;
+          created_by: string;
+        }
+      >;
       projeto_versoes: Table<
         {
           id: string;
