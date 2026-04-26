@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 
 import { TechnicalComments } from '@/components/comentarios/technical-comments';
+import { ComparativeAnalysisPanel } from '@/components/projetos/comparative-analysis-panel';
 import { LegislativeResearchPanel } from '@/components/projetos/legislative-research-panel';
 import { NormasBibliotecaPanel } from '@/components/projetos/normas-biblioteca-panel';
 import { VersionHistory } from '@/components/versionamento/version-history';
@@ -32,6 +33,7 @@ export default async function ProjetoDetalhePage({ params }: Params) {
           referencias={referencias}
           setupError={referenciasSetupError}
         />
+        <ComparativeAnalysisPanel projetoId={projeto.id} hasReferencias={referencias.length > 0} />
         <VersionHistory versoes={versoes} />
         <TechnicalComments comentarios={comentarios} />
       </main>
