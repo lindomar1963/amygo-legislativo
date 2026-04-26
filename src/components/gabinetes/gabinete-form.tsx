@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import {
   createGabinete,
   GABINETE_FIELD_NAMES,
-  type CreateGabineteState,
+  type CreateGabineteState
 } from '@/app/(dashboard)/gabinetes/actions';
 
 const initialState: CreateGabineteState = {};
@@ -69,7 +69,7 @@ export function GabineteForm() {
         <input
           className="input"
           name={GABINETE_FIELD_NAMES.orgaoCasaLegislativa}
-          placeholder="Órgão/Casa legislativa"
+          placeholder="Orgao/Casa legislativa"
           required
           aria-invalid={Boolean(state.fieldErrors?.orgao_casa_legislativa)}
         />
