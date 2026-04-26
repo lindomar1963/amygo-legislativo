@@ -16,6 +16,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
           <Link href="/dashboard">Dashboard</Link>
           <Link href="/gabinetes">Gabinetes</Link>
           <Link href="/projetos-legislativos">Projetos Legislativos</Link>
+          <Link href="/biblioteca-legislativa">Biblioteca Legislativa</Link>
         </nav>
         <form action={signOut} style={{ marginTop: '2rem' }}>
           <button type="submit" className="button" style={{ width: '100%' }}>

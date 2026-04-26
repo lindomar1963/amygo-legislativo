@@ -63,6 +63,43 @@ export type Database = {
           ativo?: boolean;
         }
       >;
+      biblioteca_normas: Table<
+        {
+          id: string;
+          owner_user_id: string;
+          titulo: string;
+          esfera: 'municipal' | 'estadual' | 'federal';
+          uf: string | null;
+          municipio: string | null;
+          orgao_origem: string;
+          tipo: 'lei' | 'lei_complementar' | 'decreto' | 'resolucao' | 'outro';
+          numero: string | null;
+          ano: number | null;
+          tema: string | null;
+          ementa: string | null;
+          texto_integral: string | null;
+          fonte_url: string | null;
+          arquivo_url: string | null;
+          created_at: string;
+          updated_at: string;
+        },
+        {
+          owner_user_id: string;
+          titulo: string;
+          esfera: 'municipal' | 'estadual' | 'federal';
+          uf?: string | null;
+          municipio?: string | null;
+          orgao_origem: string;
+          tipo?: 'lei' | 'lei_complementar' | 'decreto' | 'resolucao' | 'outro';
+          numero?: string | null;
+          ano?: number | null;
+          tema?: string | null;
+          ementa?: string | null;
+          texto_integral?: string | null;
+          fonte_url?: string | null;
+          arquivo_url?: string | null;
+        }
+      >;
       projetos_legislativos: Table<
         {
           id: string;
