@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { ensureUserProfile } from '@/lib/users/ensure-user-profile';
+import type { Database } from '@/types/database';
 
 export type AddProjetoReferenciaState = {
   success?: string;
@@ -54,6 +55,47 @@ type NormaAnalise = {
   texto_integral: string | null;
   fonte_url: string | null;
 };
+
+type WorkflowStatus = Database['public']['Tables']['projetos_legislativos']['Row']['workflow_status'];
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+async function logWorkflowStatusChange({
+  admin,
+  projetoId,
+  userId,
+  stage,
+  fromStatus,
+  toStatus,
+  message
+}: {
+  admin: AdminClient;
+  projetoId: string;
+  userId: string;
+  stage: string;
+  fromStatus: WorkflowStatus;
+  toStatus: WorkflowStatus;
+  message: string;
+}) {
+  const { error } = await admin.from('generation_logs').insert({
+    project_id: projetoId,
+    stage,
+    request_payload: {
+      actor_user_id: userId,
+      workflow_status_from: fromStatus,
+      workflow_status_to: toStatus
+    },
+    response_payload: {
+      message
+    },
+    success: true
+  });
+
+  if (error) {
+    return `Status atualizado, mas nao foi possivel registrar em generation_logs: ${error.message}`;
+  }
+
+  return null;
+}
 
 function normaLabel(norma: NormaAnalise) {
   const numeroAno = [norma.numero ? `n. ${norma.numero}` : null, norma.ano ? `/${norma.ano}` : null]
@@ -269,7 +311,7 @@ export async function generateAnaliseComparativa(
 
   const projeto = await supabase
     .from('projetos_legislativos')
-    .select('id, titulo, ementa, tipo, gabinete_id')
+    .select('id, titulo, ementa, tipo, gabinete_id, workflow_status')
     .eq('id', projetoId)
     .single();
 
@@ -346,10 +388,11 @@ export async function generateAnaliseComparativa(
     return { error: `Nao foi possivel salvar a analise comparativa: ${error.message}` };
   }
 
+  const nextWorkflowStatus: WorkflowStatus = 'minuta_generated';
   const { error: workflowError } = await admin
     .from('projetos_legislativos')
     .update({
-      workflow_status: 'minuta_generated',
+      workflow_status: nextWorkflowStatus,
       status_fluxo: 'em_revisao',
       approved_minuta: false
     })
@@ -359,6 +402,20 @@ export async function generateAnaliseComparativa(
     return {
       error: `Minuta salva, mas nao foi possivel atualizar o status do fluxo: ${workflowError.message}`
     };
+  }
+
+  const logError = await logWorkflowStatusChange({
+    admin,
+    projetoId,
+    userId: user.id,
+    stage: 'minuta_generated',
+    fromStatus: projeto.data.workflow_status,
+    toStatus: nextWorkflowStatus,
+    message: `Analise comparativa e minuta geradas como versao ${nextVersion}.`
+  });
+
+  if (logError) {
+    return { error: logError };
   }
 
   revalidatePath(`/projetos-legislativos/${projetoId}`);
@@ -388,7 +445,7 @@ export async function approveMinuta(
 
   const projeto = await supabase
     .from('projetos_legislativos')
-    .select('id')
+    .select('id, workflow_status')
     .eq('id', projetoId)
     .single();
 
@@ -416,17 +473,32 @@ export async function approveMinuta(
     };
   }
 
+  const nextWorkflowStatus: WorkflowStatus = 'minuta_approved';
   const { error } = await admin
     .from('projetos_legislativos')
     .update({
       approved_minuta: true,
-      workflow_status: 'minuta_approved',
+      workflow_status: nextWorkflowStatus,
       status_fluxo: 'aprovado_interno'
     })
     .eq('id', projetoId);
 
   if (error) {
     return { error: `Nao foi possivel aprovar a minuta: ${error.message}` };
+  }
+
+  const logError = await logWorkflowStatusChange({
+    admin,
+    projetoId,
+    userId: user.id,
+    stage: 'minuta_approved',
+    fromStatus: projeto.data.workflow_status,
+    toStatus: nextWorkflowStatus,
+    message: 'Minuta aprovada por acao humana.'
+  });
+
+  if (logError) {
+    return { error: logError };
   }
 
   revalidatePath(`/projetos-legislativos/${projetoId}`);
@@ -456,7 +528,7 @@ export async function generateJustificativa(
 
   const projeto = await supabase
     .from('projetos_legislativos')
-    .select('id, titulo, ementa, gabinete_id, approved_minuta')
+    .select('id, titulo, ementa, gabinete_id, approved_minuta, workflow_status')
     .eq('id', projetoId)
     .single();
 
@@ -519,10 +591,11 @@ export async function generateJustificativa(
     return { error: `Nao foi possivel salvar a justificativa: ${versaoError.message}` };
   }
 
+  const nextWorkflowStatus: WorkflowStatus = 'justificativa_generated';
   const { error: workflowError } = await admin
     .from('projetos_legislativos')
     .update({
-      workflow_status: 'justificativa_generated'
+      workflow_status: nextWorkflowStatus
     })
     .eq('id', projetoId);
 
@@ -530,6 +603,20 @@ export async function generateJustificativa(
     return {
       error: `Justificativa salva, mas nao foi possivel atualizar o status do fluxo: ${workflowError.message}`
     };
+  }
+
+  const logError = await logWorkflowStatusChange({
+    admin,
+    projetoId,
+    userId: user.id,
+    stage: 'justificativa_generated',
+    fromStatus: projeto.data.workflow_status,
+    toStatus: nextWorkflowStatus,
+    message: `Justificativa gerada como versao ${nextVersion}.`
+  });
+
+  if (logError) {
+    return { error: logError };
   }
 
   revalidatePath(`/projetos-legislativos/${projetoId}`);

@@ -209,6 +209,24 @@ export type Database = {
         never,
         never
       >;
+      generation_logs: Table<
+        {
+          id: string;
+          project_id: string;
+          stage: string;
+          request_payload: Json;
+          response_payload: Json;
+          success: boolean;
+          created_at: string;
+        },
+        {
+          project_id: string;
+          stage: string;
+          request_payload?: Json;
+          response_payload?: Json;
+          success?: boolean;
+        }
+      >;
       ia_interacoes: Table<
         {
           id: string;
