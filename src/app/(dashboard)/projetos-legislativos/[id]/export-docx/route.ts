@@ -54,15 +54,18 @@ export async function GET(_request: Request, { params }: RouteContext) {
     return new Response('Projeto nao encontrado ou nao vinculado ao seu usuario.', { status: 404 });
   }
 
-  if (projeto.data.workflow_status !== 'justificativa_generated' && projeto.data.workflow_status !== 'docx_exported') {
+  if (projeto.data.workflow_status !== 'justificativa_generated') {
     return new Response('Gere a justificativa antes de exportar DOCX.', { status: 400 });
   }
 
-  const versoes = await supabase
-    .from('projeto_versoes')
-    .select('numero_versao, conteudo_texto, resumo_alteracoes')
-    .eq('projeto_id', id)
-    .order('numero_versao', { ascending: false });
+  const [versoes, gabinete] = await Promise.all([
+    supabase
+      .from('projeto_versoes')
+      .select('numero_versao, conteudo_texto, resumo_alteracoes')
+      .eq('projeto_id', id)
+      .order('numero_versao', { ascending: false }),
+    supabase.from('gabinetes').select('nome, esfera, orgao_casa_legislativa').eq('id', projeto.data.gabinete_id).single()
+  ]);
 
   if (versoes.error) {
     return new Response(`Nao foi possivel carregar as versoes: ${versoes.error.message}`, { status: 500 });
@@ -93,7 +96,23 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const nextVersion = latestVersionNumber + 1;
   const minutaText = extractMinuta(minuta.conteudo_texto);
   const justificativaText = justificativa.conteudo_texto.replace(/^JUSTIFICATIVA\s*/i, '').trim();
+  const casaLegislativa = gabinete.data?.orgao_casa_legislativa ?? 'Casa Legislativa';
+  const autor = gabinete.data?.nome ?? user.email ?? 'Autor';
+  const cargoAutor =
+    gabinete.data?.esfera === 'estadual'
+      ? 'Deputado Estadual'
+      : gabinete.data?.esfera === 'municipal'
+        ? 'Vereador'
+        : 'Parlamentar';
+  const localData = new Intl.DateTimeFormat('pt-BR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'America/Manaus'
+  }).format(new Date());
   const exportText = [
+    'PROJETO DE LEI No ____ / ______',
+    '',
     projeto.data.titulo,
     '',
     'EMENTA',
@@ -103,7 +122,12 @@ export async function GET(_request: Request, { params }: RouteContext) {
     minutaText,
     '',
     'JUSTIFICATIVA',
-    justificativaText
+    justificativaText,
+    '',
+    `${casaLegislativa.toUpperCase()}, em ${localData}.`,
+    '',
+    autor,
+    cargoAutor
   ].join('\n');
 
   const { error: versionError } = await admin.from('projeto_versoes').insert({
@@ -161,7 +185,11 @@ export async function GET(_request: Request, { params }: RouteContext) {
     titulo: projeto.data.titulo,
     ementa: projeto.data.ementa,
     minuta: minutaText,
-    justificativa: justificativaText
+    justificativa: justificativaText,
+    autor,
+    cargoAutor,
+    localData,
+    casaLegislativa
   });
   const filename = `${sanitizeFilename(projeto.data.titulo) || 'projeto-legislativo'}.docx`;
 

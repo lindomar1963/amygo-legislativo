@@ -47,7 +47,7 @@ export default async function ProjetoDetalhePage({ params }: Params) {
         <JustificativaPanel projetoId={projeto.id} approvedMinuta={projeto.approved_minuta} />
         <DocxExportPanel
           projetoId={projeto.id}
-          canExport={projeto.workflow_status === 'justificativa_generated' || projeto.workflow_status === 'docx_exported'}
+          canExport={projeto.workflow_status === 'justificativa_generated'}
         />
         <VersionHistory versoes={versoes} />
         <TechnicalComments comentarios={comentarios} />
