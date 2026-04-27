@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 
 import { TechnicalComments } from '@/components/comentarios/technical-comments';
 import { ComparativeAnalysisPanel } from '@/components/projetos/comparative-analysis-panel';
+import { DocxExportPanel } from '@/components/projetos/docx-export-panel';
 import { JustificativaPanel } from '@/components/projetos/justificativa-panel';
 import { LegislativeResearchPanel } from '@/components/projetos/legislative-research-panel';
 import { MinutaApprovalPanel } from '@/components/projetos/minuta-approval-panel';
@@ -44,6 +45,10 @@ export default async function ProjetoDetalhePage({ params }: Params) {
           hasVersoes={versoes.length > 0}
         />
         <JustificativaPanel projetoId={projeto.id} approvedMinuta={projeto.approved_minuta} />
+        <DocxExportPanel
+          projetoId={projeto.id}
+          canExport={projeto.workflow_status === 'justificativa_generated' || projeto.workflow_status === 'docx_exported'}
+        />
         <VersionHistory versoes={versoes} />
         <TechnicalComments comentarios={comentarios} />
       </main>
