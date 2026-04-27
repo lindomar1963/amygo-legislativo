@@ -21,6 +21,11 @@ export type ApproveMinutaState = {
   error?: string;
 };
 
+export type GenerateJustificativaState = {
+  success?: string;
+  error?: string;
+};
+
 type ProjetoAnalise = {
   id: string;
   titulo: string;
@@ -141,6 +146,43 @@ Art. 5o Esta Lei entra em vigor na data de sua publicacao.
 OBSERVACAO
 
 Este texto e uma primeira versao de trabalho. A justificativa deve ser gerada somente depois da aprovacao humana da minuta.`;
+}
+
+function assertMinutaApproved(approved_minuta: boolean) {
+  if (!approved_minuta) {
+    throw new Error('Minuta precisa ser aprovada antes de gerar justificativa.');
+  }
+}
+
+function buildJustificativa({
+  titulo,
+  ementa,
+  gabineteNome,
+  orgaoCasaLegislativa
+}: {
+  titulo: string;
+  ementa: string | null;
+  gabineteNome: string | null;
+  orgaoCasaLegislativa: string | null;
+}) {
+  return `JUSTIFICATIVA
+
+Senhor Presidente,
+Senhoras e Senhores Parlamentares,
+
+Submetemos a apreciacao desta Casa Legislativa o presente projeto, intitulado "${titulo}", que tem por finalidade ${ementa ?? 'disciplinar materia de interesse publico conforme a minuta aprovada'}.
+
+A proposta foi elaborada a partir de analise tecnica e comparativa de norma de referencia, respeitando a necessidade de adequacao a realidade institucional de ${orgaoCasaLegislativa ?? 'seu orgao legislativo'}.
+
+Sob o aspecto administrativo, a medida busca conferir maior seguranca juridica, previsibilidade e organizacao normativa ao tema tratado, permitindo que a execucao da politica publica ocorra de forma compativel com os principios da legalidade, eficiencia, transparencia e interesse publico.
+
+Quanto ao impacto orcamentario, quando houver necessidade de despesa publica, sua execucao devera observar as dotacoes orcamentarias proprias e a legislacao fiscal vigente.
+
+Ressalta-se que a minuta foi submetida a aprovacao humana no fluxo interno do projeto antes da geracao desta justificativa, em observancia ao procedimento oficial do Amygo Legislativo.
+
+Diante do exposto, contamos com o apoio dos nobres pares para a aprovacao da presente proposicao.
+
+${gabineteNome ?? 'Gabinete responsavel'}`;
 }
 
 export async function addProjetoNormaReferencia(
@@ -390,4 +432,107 @@ export async function approveMinuta(
   revalidatePath(`/projetos-legislativos/${projetoId}`);
 
   return { success: 'Minuta aprovada. A justificativa podera ser gerada na proxima etapa.' };
+}
+
+export async function generateJustificativa(
+  _prevState: GenerateJustificativaState | null,
+  formData: FormData
+): Promise<GenerateJustificativaState> {
+  const projetoId = String(formData.get('projeto_id') ?? '');
+
+  if (!projetoId) {
+    return { error: 'Projeto obrigatorio para gerar justificativa.' };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return { error: 'Sessao expirada. Entre novamente para gerar justificativa.' };
+  }
+
+  const projeto = await supabase
+    .from('projetos_legislativos')
+    .select('id, titulo, ementa, gabinete_id, approved_minuta')
+    .eq('id', projetoId)
+    .single();
+
+  if (projeto.error || !projeto.data) {
+    return { error: 'Projeto nao encontrado ou nao vinculado ao seu usuario.' };
+  }
+
+  try {
+    assertMinutaApproved(projeto.data.approved_minuta);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'Minuta ainda nao aprovada.' };
+  }
+
+  const [gabinete, latestVersion] = await Promise.all([
+    supabase
+      .from('gabinetes')
+      .select('nome, orgao_casa_legislativa')
+      .eq('id', projeto.data.gabinete_id)
+      .single(),
+    supabase
+      .from('projeto_versoes')
+      .select('numero_versao')
+      .eq('projeto_id', projetoId)
+      .order('numero_versao', { ascending: false })
+      .limit(1)
+  ]);
+
+  if (latestVersion.error || !latestVersion.data?.length) {
+    return { error: 'Nao ha minuta versionada para justificar.' };
+  }
+
+  let admin;
+  try {
+    admin = createAdminClient();
+    await ensureUserProfile(admin, user);
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : 'Nao foi possivel preparar a geracao da justificativa.'
+    };
+  }
+
+  const nextVersion = ((latestVersion.data[0]?.numero_versao as number | undefined) ?? 0) + 1;
+  const conteudo = buildJustificativa({
+    titulo: projeto.data.titulo,
+    ementa: projeto.data.ementa,
+    gabineteNome: gabinete.data?.nome ?? null,
+    orgaoCasaLegislativa: gabinete.data?.orgao_casa_legislativa ?? null
+  });
+
+  const { error: versaoError } = await admin.from('projeto_versoes').insert({
+    projeto_id: projetoId,
+    numero_versao: nextVersion,
+    conteudo_texto: conteudo,
+    resumo_alteracoes: 'Justificativa gerada apos aprovacao humana da minuta.',
+    criado_por: user.id,
+    origem: 'ia'
+  });
+
+  if (versaoError) {
+    return { error: `Nao foi possivel salvar a justificativa: ${versaoError.message}` };
+  }
+
+  const { error: workflowError } = await admin
+    .from('projetos_legislativos')
+    .update({
+      workflow_status: 'justificativa_generated'
+    })
+    .eq('id', projetoId);
+
+  if (workflowError) {
+    return {
+      error: `Justificativa salva, mas nao foi possivel atualizar o status do fluxo: ${workflowError.message}`
+    };
+  }
+
+  revalidatePath(`/projetos-legislativos/${projetoId}`);
+
+  return { success: `Justificativa gerada como versao ${nextVersion}.` };
 }

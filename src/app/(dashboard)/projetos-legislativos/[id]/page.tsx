@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 
 import { TechnicalComments } from '@/components/comentarios/technical-comments';
 import { ComparativeAnalysisPanel } from '@/components/projetos/comparative-analysis-panel';
+import { JustificativaPanel } from '@/components/projetos/justificativa-panel';
 import { LegislativeResearchPanel } from '@/components/projetos/legislative-research-panel';
 import { MinutaApprovalPanel } from '@/components/projetos/minuta-approval-panel';
 import { NormasBibliotecaPanel } from '@/components/projetos/normas-biblioteca-panel';
@@ -42,6 +43,7 @@ export default async function ProjetoDetalhePage({ params }: Params) {
           workflowStatus={projeto.workflow_status}
           hasVersoes={versoes.length > 0}
         />
+        <JustificativaPanel projetoId={projeto.id} approvedMinuta={projeto.approved_minuta} />
         <VersionHistory versoes={versoes} />
         <TechnicalComments comentarios={comentarios} />
       </main>
