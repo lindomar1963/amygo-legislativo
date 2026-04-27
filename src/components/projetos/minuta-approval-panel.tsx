@@ -12,7 +12,7 @@ function ApproveButton({ disabled }: { disabled: boolean }) {
 
   return (
     <button className="button" type="submit" disabled={disabled || pending}>
-      {pending ? 'Aprovando...' : 'Aprovar minuta'}
+      {pending ? 'Validando...' : 'Validar minuta'}
     </button>
   );
 }
@@ -42,7 +42,7 @@ export function MinutaApprovalPanel({
 
       <p style={{ color: approvedMinuta ? '#166534' : '#92400e' }}>
         {approvedMinuta
-          ? 'Minuta aprovada. A proxima etapa e gerar a justificativa.'
+          ? 'Minuta validada. A justificativa pode ser elaborada na próxima etapa.'
           : hasVersoes
             ? 'Minuta pendente de aprovacao.'
             : 'Gere uma minuta antes de aprovar.'}

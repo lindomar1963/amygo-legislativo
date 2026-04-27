@@ -537,7 +537,7 @@ export async function approveMinuta(
 
   revalidatePath(`/projetos-legislativos/${projetoId}`);
 
-  return { success: 'Minuta aprovada. A justificativa podera ser gerada na proxima etapa.' };
+  return { success: 'Minuta validada. A justificativa pode ser elaborada na próxima etapa.' };
 }
 
 export async function generateJustificativa(
@@ -617,7 +617,7 @@ export async function generateJustificativa(
     projeto_id: projetoId,
     numero_versao: nextVersion,
     conteudo_texto: conteudo,
-    resumo_alteracoes: 'Justificativa gerada apos validacao da minuta.',
+    resumo_alteracoes: 'Justificativa elaborada após validação da minuta-base.',
     criado_por: user.id,
     origem: 'ia'
   });

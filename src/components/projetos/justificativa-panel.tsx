@@ -34,7 +34,7 @@ export function JustificativaPanel({
       <div>
         <h2>Justificativa</h2>
         <p className="muted">
-          Esta etapa so fica disponivel apos validacao da minuta.
+          Esta etapa ficará disponível após a validação técnica da minuta.
         </p>
       </div>
 
