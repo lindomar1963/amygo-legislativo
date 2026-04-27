@@ -36,8 +36,11 @@ export function GabineteForm() {
   }, [router, state.success]);
 
   return (
-    <form id={gabineteFormId} ref={formRef} action={action} className="card grid" style={{ gap: '0.75rem' }}>
-      <h2>Novo gabinete</h2>
+    <form id={gabineteFormId} ref={formRef} action={action} className="card card-section">
+      <div>
+        <p className="eyebrow">Cadastro</p>
+        <h2>Novo gabinete</h2>
+      </div>
 
       <div>
         <input
@@ -69,7 +72,7 @@ export function GabineteForm() {
         <input
           className="input"
           name={GABINETE_FIELD_NAMES.orgaoCasaLegislativa}
-          placeholder="Orgao/Casa legislativa"
+          placeholder="Órgão/Casa legislativa"
           required
           aria-invalid={Boolean(state.fieldErrors?.orgao_casa_legislativa)}
         />
@@ -79,8 +82,8 @@ export function GabineteForm() {
       </div>
 
       <div aria-live="polite" role="status">
-        {state.error ? <p style={{ color: '#b91c1c' }}>{state.error}</p> : null}
-        {state.success ? <p style={{ color: '#166534' }}>{state.success}</p> : null}
+        {state.error ? <p className="notice notice-danger">{state.error}</p> : null}
+        {state.success ? <p className="notice notice-success">{state.success}</p> : null}
       </div>
 
       <SubmitButton />

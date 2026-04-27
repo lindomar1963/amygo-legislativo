@@ -265,7 +265,7 @@ export async function addProjetoNormaReferencia(
   const normaId = String(formData.get('norma_id') ?? '');
 
   if (!projetoId || !normaId) {
-    return { error: 'Projeto e norma sao obrigatorios.' };
+    return { error: 'Projeto e norma são obrigatórios.' };
   }
 
   const supabase = await createClient();
@@ -316,7 +316,7 @@ export async function addProjetoNormaReferencia(
 
   revalidatePath(`/projetos-legislativos/${projetoId}`);
 
-  return { success: 'Norma marcada como referencia do projeto.' };
+  return { success: 'Norma marcada como referência do projeto.' };
 }
 
 export async function generateAnaliseComparativa(
@@ -375,7 +375,7 @@ export async function generateAnaliseComparativa(
     .in('id', normaIds);
 
   if (normas.error || !normas.data?.length) {
-    return { error: normas.error?.message ?? 'Nenhuma norma de referencia foi encontrada na biblioteca.' };
+    return { error: normas.error?.message ?? 'Nenhuma norma de referência foi encontrada na biblioteca.' };
   }
 
   let admin;

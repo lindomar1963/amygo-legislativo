@@ -9,28 +9,27 @@ export default async function BibliotecaLegislativaPage() {
   try {
     normas = await getBibliotecaNormas();
   } catch (error) {
-    setupError = error instanceof Error ? error.message : 'Nao foi possivel carregar a biblioteca.';
+    setupError = error instanceof Error ? error.message : 'Não foi possível carregar a biblioteca.';
   }
 
   return (
-    <main className="grid" style={{ gap: '1rem' }}>
-      <header>
+    <main className="page">
+      <header className="page-header">
+        <p className="eyebrow">Biblioteca normativa</p>
         <h1>Biblioteca Legislativa</h1>
         <p className="muted">
-          Cadastre leis estaduais, municipais e federais para usar como base de pesquisa e analise comparativa.
+          Cadastre leis estaduais, municipais e federais para usar como base de pesquisa e análise comparativa.
         </p>
       </header>
 
       {setupError ? (
-        <section className="card">
+        <section className="card card-section">
           <h2>Banco de dados pendente</h2>
           <p className="muted">
-            A tela ja esta pronta, mas a tabela da biblioteca precisa existir no Supabase antes de cadastrar normas.
+            A tela já está pronta, mas a tabela da biblioteca precisa existir no Supabase antes de cadastrar normas.
           </p>
-          <p style={{ color: '#b91c1c' }}>{setupError}</p>
-          <p className="muted">
-            A migration esta em supabase/migrations/202604260001_biblioteca_normas.sql.
-          </p>
+          <p className="notice notice-danger">{setupError}</p>
+          <p className="muted">A migration está em supabase/migrations/202604260001_biblioteca_normas.sql.</p>
         </section>
       ) : (
         <>

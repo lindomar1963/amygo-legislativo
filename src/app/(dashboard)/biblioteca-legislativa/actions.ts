@@ -14,15 +14,15 @@ type NormaInsert = Database['public']['Tables']['biblioteca_normas']['Insert'];
 const optionalText = z.string().trim().optional();
 
 const normaSchema = z.object({
-  [BIBLIOTECA_FIELD_NAMES.titulo]: z.string().trim().min(1, 'Titulo e obrigatorio.'),
+  [BIBLIOTECA_FIELD_NAMES.titulo]: z.string().trim().min(1, 'Título é obrigatório.'),
   [BIBLIOTECA_FIELD_NAMES.esfera]: z.enum(BIBLIOTECA_ESFERAS, {
-    errorMap: () => ({ message: 'Esfera invalida.' })
+    errorMap: () => ({ message: 'Esfera inválida.' })
   }),
   [BIBLIOTECA_FIELD_NAMES.uf]: optionalText,
   [BIBLIOTECA_FIELD_NAMES.municipio]: optionalText,
-  [BIBLIOTECA_FIELD_NAMES.orgaoOrigem]: z.string().trim().min(1, 'Orgao de origem e obrigatorio.'),
+  [BIBLIOTECA_FIELD_NAMES.orgaoOrigem]: z.string().trim().min(1, 'Órgão de origem é obrigatório.'),
   [BIBLIOTECA_FIELD_NAMES.tipo]: z.enum(BIBLIOTECA_TIPOS, {
-    errorMap: () => ({ message: 'Tipo de norma invalido.' })
+    errorMap: () => ({ message: 'Tipo de norma inválido.' })
   }),
   [BIBLIOTECA_FIELD_NAMES.numero]: optionalText,
   [BIBLIOTECA_FIELD_NAMES.ano]: optionalText,
@@ -79,7 +79,7 @@ export async function createBibliotecaNorma(
 
   if (!parsed.success) {
     return {
-      error: 'Revise os campos obrigatorios.',
+      error: 'Revise os campos obrigatórios.',
       fieldErrors: parsed.error.flatten().fieldErrors
     };
   }
@@ -91,7 +91,7 @@ export async function createBibliotecaNorma(
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return { error: 'Sessao expirada. Entre novamente para cadastrar a norma.' };
+    return { error: 'Sessão expirada. Entre novamente para cadastrar a norma.' };
   }
 
   let admin;
@@ -100,7 +100,7 @@ export async function createBibliotecaNorma(
     await ensureUserProfile(admin, user);
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : 'Nao foi possivel preparar o cadastro da norma.'
+      error: error instanceof Error ? error.message : 'Não foi possível preparar o cadastro da norma.'
     };
   }
 
@@ -108,8 +108,8 @@ export async function createBibliotecaNorma(
 
   if (ano !== null && (!Number.isInteger(ano) || ano < 1800 || ano > 2200)) {
     return {
-      error: 'Informe um ano valido.',
-      fieldErrors: { ano: ['Informe um ano valido.'] }
+      error: 'Informe um ano válido.',
+      fieldErrors: { ano: ['Informe um ano válido.'] }
     };
   }
 
@@ -133,7 +133,7 @@ export async function createBibliotecaNorma(
   const { error } = await admin.from('biblioteca_normas').insert(normaToInsert);
 
   if (error) {
-    return { error: `Nao foi possivel cadastrar a norma: ${error.message}` };
+    return { error: `Não foi possível cadastrar a norma: ${error.message}` };
   }
 
   revalidatePath('/biblioteca-legislativa');

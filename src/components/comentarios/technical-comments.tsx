@@ -7,15 +7,22 @@ type Comentario = Pick<
 
 export function TechnicalComments({ comentarios }: { comentarios: Comentario[] }) {
   return (
-    <section className="card">
-      <h2>Comentários técnicos</h2>
-      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+    <section className="card card-section">
+      <div>
+        <p className="eyebrow">Revisão especializada</p>
+        <h2>Comentários técnicos</h2>
+      </div>
+      {comentarios.length === 0 ? <p className="muted">Nenhum comentário técnico registrado.</p> : null}
+      <ul className="list">
         {comentarios.map((comentario) => (
-          <li key={comentario.id} style={{ borderTop: '1px solid var(--border)', padding: '0.75rem 0' }}>
+          <li key={comentario.id} className="list-card">
             <p style={{ margin: 0 }}>
-              <strong>{comentario.tipo}</strong> · {comentario.resolvido ? 'Resolvido' : 'Aberto'}
+              <strong>{comentario.tipo}</strong>{' '}
+              <span className={comentario.resolvido ? 'badge badge-minuta-approved' : 'badge badge-draft'}>
+                {comentario.resolvido ? 'Resolvido' : 'Aberto'}
+              </span>
             </p>
-            <p style={{ margin: '0.35rem 0' }}>{comentario.comentario}</p>
+            <p style={{ margin: 0 }}>{comentario.comentario}</p>
             <p className="muted" style={{ margin: 0 }}>
               {new Date(comentario.created_at).toLocaleString('pt-BR')}
             </p>

@@ -38,8 +38,11 @@ export function ProjetoForm({ gabinetes }: { gabinetes: Gabinete[] }) {
   }, [router, state.success]);
 
   return (
-    <form id={projetoFormId} ref={formRef} action={action} className="card grid" style={{ gap: '1rem' }}>
-      <h2>Novo projeto legislativo</h2>
+    <form id={projetoFormId} ref={formRef} action={action} className="card card-section">
+      <div>
+        <p className="eyebrow">Nova proposição</p>
+        <h2>Novo projeto legislativo</h2>
+      </div>
 
       <div>
         <select
@@ -66,7 +69,7 @@ export function ProjetoForm({ gabinetes }: { gabinetes: Gabinete[] }) {
         <input
           className="input"
           name={PROJETO_FIELD_NAMES.titulo}
-          placeholder="Titulo do projeto"
+          placeholder="Título do projeto"
           required
           aria-invalid={Boolean(state.fieldErrors?.titulo)}
         />
@@ -106,9 +109,11 @@ export function ProjetoForm({ gabinetes }: { gabinetes: Gabinete[] }) {
       <div aria-live="polite" role="status">
         {state.error ? <p style={{ color: '#b91c1c' }}>{state.error}</p> : null}
         {state.success ? (
-          <div className="card" style={{ borderColor: '#86efac', background: '#f0fdf4' }}>
-            <p style={{ color: '#166534', marginTop: 0 }}>{state.success}</p>
-            <p className="muted">Proximo passo: abra o projeto para trabalhar na minuta, versoes e revisoes.</p>
+          <div className="notice notice-success">
+            <p style={{ marginTop: 0 }}>{state.success}</p>
+            <p style={{ marginBottom: '0.85rem' }}>
+              Próximo passo: abra o projeto para trabalhar na minuta, versões e revisões.
+            </p>
             {state.projetoId ? (
               <Link className="button" href={`/projetos-legislativos/${state.projetoId}`}>
                 Abrir projeto

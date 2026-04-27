@@ -8,7 +8,7 @@ export function LoginForm() {
   const [state, action, pending] = useActionState(signInWithEmail, null as { error?: string } | null);
 
   return (
-    <form action={action} className="grid" style={{ gap: '0.75rem' }}>
+    <form action={action} className="grid" style={{ gap: '0.9rem' }}>
       <div>
         <label htmlFor="email">E-mail</label>
         <input id="email" name="email" type="email" className="input" required />
@@ -19,7 +19,7 @@ export function LoginForm() {
         <input id="password" name="password" type="password" className="input" required />
       </div>
 
-      {state?.error ? <p style={{ color: '#b91c1c' }}>{state.error}</p> : null}
+      {state?.error ? <p className="notice notice-danger">{state.error}</p> : null}
 
       <button type="submit" className="button" disabled={pending}>
         {pending ? 'Entrando...' : 'Entrar'}

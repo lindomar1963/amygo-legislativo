@@ -33,12 +33,15 @@ export function NormaForm() {
   }, [router, state.success]);
 
   return (
-    <form id={normaFormId} ref={formRef} action={action} className="card grid" style={{ gap: '1rem' }}>
-      <h2>Cadastrar norma</h2>
+    <form id={normaFormId} ref={formRef} action={action} className="card card-section">
+      <div>
+        <p className="eyebrow">Acervo normativo</p>
+        <h2>Cadastrar norma</h2>
+      </div>
 
-      <input className="input" name={BIBLIOTECA_FIELD_NAMES.titulo} placeholder="Titulo da lei ou norma" required />
+      <input className="input" name={BIBLIOTECA_FIELD_NAMES.titulo} placeholder="Título da lei ou norma" required />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+      <div className="form-row-2">
         <select className="select" name={BIBLIOTECA_FIELD_NAMES.esfera} defaultValue="estadual" required>
           {BIBLIOTECA_ESFERAS.map((esfera) => (
             <option key={esfera} value={esfera}>
@@ -55,14 +58,14 @@ export function NormaForm() {
         </select>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+      <div className="form-row-3">
         <input className="input" name={BIBLIOTECA_FIELD_NAMES.uf} placeholder="UF" maxLength={2} />
-        <input className="input" name={BIBLIOTECA_FIELD_NAMES.numero} placeholder="Numero" />
+        <input className="input" name={BIBLIOTECA_FIELD_NAMES.numero} placeholder="Número" />
         <input className="input" name={BIBLIOTECA_FIELD_NAMES.ano} placeholder="Ano" inputMode="numeric" />
       </div>
 
-      <input className="input" name={BIBLIOTECA_FIELD_NAMES.municipio} placeholder="Municipio, se houver" />
-      <input className="input" name={BIBLIOTECA_FIELD_NAMES.orgaoOrigem} placeholder="Orgao de origem" required />
+      <input className="input" name={BIBLIOTECA_FIELD_NAMES.municipio} placeholder="Município, se houver" />
+      <input className="input" name={BIBLIOTECA_FIELD_NAMES.orgaoOrigem} placeholder="Órgão de origem" required />
       <input className="input" name={BIBLIOTECA_FIELD_NAMES.tema} placeholder="Tema ou etiqueta principal" />
 
       <textarea className="textarea" name={BIBLIOTECA_FIELD_NAMES.ementa} placeholder="Ementa" rows={3} />
@@ -77,8 +80,8 @@ export function NormaForm() {
       <input className="input" name={BIBLIOTECA_FIELD_NAMES.arquivoUrl} placeholder="Link do arquivo no Drive/nuvem" />
 
       <div aria-live="polite" role="status">
-        {state.error ? <p style={{ color: '#b91c1c' }}>{state.error}</p> : null}
-        {state.success ? <p style={{ color: '#166534' }}>{state.success}</p> : null}
+        {state.error ? <p className="notice notice-danger">{state.error}</p> : null}
+        {state.success ? <p className="notice notice-success">{state.success}</p> : null}
       </div>
 
       <SubmitButton />

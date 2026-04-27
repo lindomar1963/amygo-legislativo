@@ -17,9 +17,7 @@ function searchUrl(query: string) {
 }
 
 function buildResearchLinks(projeto: Projeto, gabinete: Gabinete): ResearchLink[] {
-  const baseTerms = [projeto.titulo, projeto.ementa, gabinete.orgao_casa_legislativa]
-    .filter(Boolean)
-    .join(' ');
+  const baseTerms = [projeto.titulo, projeto.ementa, gabinete.orgao_casa_legislativa].filter(Boolean).join(' ');
   const lawTerms = `"${projeto.titulo}" lei projeto legislativo ${gabinete.esfera}`;
 
   const primaryTarget =
@@ -32,27 +30,27 @@ function buildResearchLinks(projeto: Projeto, gabinete: Gabinete): ResearchLink[
   return [
     {
       label: 'Pesquisar no LexML',
-      description: 'Busca ampla em legislacao, proposicoes e acervo juridico brasileiro.',
+      description: 'Busca ampla em legislação, proposições e acervo jurídico brasileiro.',
       href: searchUrl(`${baseTerms} site:lexml.gov.br`)
     },
     {
-      label: gabinete.esfera === 'municipal' ? 'Buscar em Camaras Municipais' : 'Buscar em Assembleias Legislativas',
-      description: 'Prioriza casas legislativas do mesmo nivel do gabinete solicitante.',
+      label: gabinete.esfera === 'municipal' ? 'Buscar em Câmaras Municipais' : 'Buscar em Assembleias Legislativas',
+      description: 'Prioriza casas legislativas do mesmo nível do gabinete solicitante.',
       href: searchUrl(`${baseTerms} ${primaryTarget}`)
     },
     {
-      label: 'Buscar na Camara dos Deputados',
-      description: 'Verifica proposicoes federais semelhantes e justificativas de autores.',
+      label: 'Buscar na Câmara dos Deputados',
+      description: 'Verifica proposições federais semelhantes e justificativas de autores.',
       href: searchUrl(`${lawTerms} site:camara.leg.br`)
     },
     {
       label: 'Buscar no Senado Federal',
-      description: 'Verifica proposicoes e normas correlatas no Senado.',
+      description: 'Verifica proposições e normas correlatas no Senado.',
       href: searchUrl(`${lawTerms} site:senado.leg.br`)
     },
     {
       label: 'Buscar leis estaduais e municipais',
-      description: 'Procura leis ja aprovadas que possam servir como matriz de adaptacao.',
+      description: 'Procura leis já aprovadas que possam servir como matriz de adaptação.',
       href: searchUrl(`${baseTerms} lei estadual lei municipal correlata`)
     }
   ];
@@ -61,7 +59,7 @@ function buildResearchLinks(projeto: Projeto, gabinete: Gabinete): ResearchLink[
 export function LegislativeResearchPanel({ projeto, gabinete }: { projeto: Projeto; gabinete: Gabinete | null }) {
   if (!gabinete) {
     return (
-      <section className="card">
+      <section className="card card-section">
         <h2>Pesquisa de leis correlatas</h2>
         <p className="muted">Vincule o projeto a um gabinete para orientar a pesquisa legislativa comparada.</p>
       </section>
@@ -71,40 +69,34 @@ export function LegislativeResearchPanel({ projeto, gabinete }: { projeto: Proje
   const links = buildResearchLinks(projeto, gabinete);
 
   return (
-    <section className="card grid" style={{ gap: '1rem' }}>
+    <section className="card card-section">
       <div>
+        <p className="eyebrow">Pesquisa comparada</p>
         <h2>Pesquisa de leis correlatas</h2>
         <p className="muted">
-          Proximo passo: localizar normas e proposicoes semelhantes em outras casas legislativas antes de adaptar a
+          Próximo passo: localizar normas e proposições semelhantes em outras casas legislativas antes de adaptar a
           minuta para {gabinete.orgao_casa_legislativa}.
         </p>
       </div>
 
       <div className="grid" style={{ gap: '0.75rem' }}>
         {links.map((link) => (
-          <a
-            key={link.label}
-            className="card"
-            href={link.href}
-            target="_blank"
-            rel="noreferrer"
-            style={{ display: 'block' }}
-          >
+          <a key={link.label} className="list-card" href={link.href} target="_blank" rel="noreferrer">
             <strong>{link.label}</strong>
-            <p className="muted" style={{ margin: '0.35rem 0 0' }}>
+            <p className="muted" style={{ margin: 0 }}>
               {link.description}
             </p>
           </a>
         ))}
       </div>
 
-      <div className="card" style={{ background: '#f8fafc' }}>
-        <strong>Checklist de adaptacao</strong>
+      <div className="notice" style={{ background: '#f8fafc' }}>
+        <strong>Checklist de adaptação</strong>
         <ul style={{ marginBottom: 0 }}>
-          <li>Confirmar se a materia e de competencia estadual, municipal ou federal.</li>
-          <li>Comparar ementa, justificativa, artigos principais e definicoes.</li>
-          <li>Adaptar orgaos, prazos, fonte orcamentaria e realidade local.</li>
-          <li>Registrar a fonte da lei correlata usada como referencia.</li>
+          <li>Confirmar se a matéria é de competência estadual, municipal ou federal.</li>
+          <li>Comparar ementa, justificativa, artigos principais e definições.</li>
+          <li>Adaptar órgãos, prazos, fonte orçamentária e realidade local.</li>
+          <li>Registrar a fonte da lei correlata usada como referência.</li>
         </ul>
       </div>
     </section>

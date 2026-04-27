@@ -4,9 +4,12 @@ type Gabinete = Database['public']['Tables']['gabinetes']['Row'];
 
 export function GabinetesTable({ gabinetes }: { gabinetes: Gabinete[] }) {
   return (
-    <div className="card">
-      <h2>Gabinetes cadastrados</h2>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+    <div className="card card-section">
+      <div>
+        <p className="eyebrow">Estruturas cadastradas</p>
+        <h2>Gabinetes cadastrados</h2>
+      </div>
+      <table>
         <thead>
           <tr>
             <th align="left">Nome</th>
@@ -17,11 +20,15 @@ export function GabinetesTable({ gabinetes }: { gabinetes: Gabinete[] }) {
         </thead>
         <tbody>
           {gabinetes.map((gabinete) => (
-            <tr key={gabinete.id} style={{ borderTop: '1px solid var(--border)' }}>
+            <tr key={gabinete.id}>
               <td>{gabinete.nome}</td>
-              <td>{gabinete.esfera}</td>
+              <td>
+                <span className="badge badge-minuta-generated">{gabinete.esfera}</span>
+              </td>
               <td>{gabinete.orgao_casa_legislativa}</td>
-              <td>{gabinete.status}</td>
+              <td>
+                <span className="badge badge-minuta-approved">{gabinete.status}</span>
+              </td>
             </tr>
           ))}
         </tbody>

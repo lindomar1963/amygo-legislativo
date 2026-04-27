@@ -32,28 +32,27 @@ export function MinutaApprovalPanel({
   const canApprove = hasVersoes && !approvedMinuta;
 
   return (
-    <section className="card grid" style={{ gap: '1rem' }}>
+    <section className="card card-section">
       <div>
-        <h2>Aprovacao da minuta</h2>
-        <p className="muted">
-          A justificativa so deve ser gerada depois que a minuta for revisada e aprovada pelo usuario.
-        </p>
+        <p className="eyebrow">Validação técnica</p>
+        <h2>Validação da minuta</h2>
+        <p className="muted">A justificativa fica disponível após a validação técnica da minuta-base.</p>
       </div>
 
-      <p style={{ color: approvedMinuta ? '#166534' : '#92400e' }}>
+      <p className={approvedMinuta ? 'notice notice-success' : 'notice notice-warning'}>
         {approvedMinuta
           ? 'Minuta validada. A justificativa pode ser elaborada na próxima etapa.'
           : hasVersoes
-            ? 'Minuta pendente de aprovacao.'
-            : 'Gere uma minuta antes de aprovar.'}
+            ? 'Minuta pendente de validação.'
+            : 'Gere uma minuta antes de validar.'}
       </p>
 
       <p className="muted" style={{ margin: 0 }}>
-        Status do fluxo: {workflowStatus}
+        Status do fluxo: <span className={`badge badge-${workflowStatus.replace(/_/g, '-')}`}>{workflowStatus}</span>
       </p>
 
-      {state.error ? <p style={{ color: '#b91c1c' }}>{state.error}</p> : null}
-      {state.success ? <p style={{ color: '#166534' }}>{state.success}</p> : null}
+      {state.error ? <p className="notice notice-danger">{state.error}</p> : null}
+      {state.success ? <p className="notice notice-success">{state.success}</p> : null}
 
       <form action={action}>
         <input type="hidden" name="projeto_id" value={projetoId} />

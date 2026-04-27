@@ -6,11 +6,12 @@ export default async function GabinetesPage() {
   const gabinetes = await getGabinetes();
 
   return (
-    <main className="grid" style={{ gap: '1rem' }}>
-      <div>
+    <main className="page">
+      <header className="page-header">
+        <p className="eyebrow">Gestão institucional</p>
         <h1>Gestão de Gabinetes</h1>
         <p className="muted">Cadastro, visualização e manutenção dos gabinetes vinculados ao usuário.</p>
-      </div>
+      </header>
       <GabineteForm />
       <GabinetesTable gabinetes={gabinetes} />
     </main>

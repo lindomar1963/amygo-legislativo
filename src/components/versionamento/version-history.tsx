@@ -7,17 +7,23 @@ type Versao = Pick<
 
 export function VersionHistory({ versoes }: { versoes: Versao[] }) {
   return (
-    <section className="card">
-      <h2>Histórico de versões</h2>
+    <section className="card card-section">
+      <div>
+        <p className="eyebrow">Controle documental</p>
+        <h2>Histórico de versões</h2>
+      </div>
       {versoes.length === 0 ? (
         <p className="muted">Nenhuma versão registrada ainda. Use a análise comparativa para criar a minuta-base.</p>
       ) : null}
-      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+      <ul className="list">
         {versoes.map((versao) => (
-          <li key={versao.id} style={{ borderTop: '1px solid var(--border)', padding: '0.75rem 0' }}>
-            <strong>Versão {versao.numero_versao}</strong>
-            <p className="muted" style={{ margin: '0.25rem 0' }}>
-              Registro: {versao.origem} - {new Date(versao.created_at).toLocaleString('pt-BR')}
+          <li key={versao.id} className="list-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+              <strong>Versão {versao.numero_versao}</strong>
+              <span className="badge badge-draft">{versao.origem}</span>
+            </div>
+            <p className="muted" style={{ margin: 0 }}>
+              Registro: {new Date(versao.created_at).toLocaleString('pt-BR')}
             </p>
             <p style={{ margin: 0 }}>{versao.resumo_alteracoes}</p>
           </li>

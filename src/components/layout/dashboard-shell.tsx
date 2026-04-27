@@ -8,23 +8,40 @@ type DashboardShellProps = {
 };
 
 export function DashboardShell({ children }: DashboardShellProps) {
+  const navItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: 'D' },
+    { href: '/gabinetes', label: 'Gabinetes', icon: 'G' },
+    { href: '/projetos-legislativos', label: 'Projetos Legislativos', icon: 'P' },
+    { href: '/biblioteca-legislativa', label: 'Biblioteca Legislativa', icon: 'B' }
+  ] as const;
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', minHeight: '100vh' }}>
-      <aside style={{ borderRight: '1px solid var(--border)', padding: '1rem', background: '#fff' }}>
-        <h2 style={{ marginTop: 0 }}>Amygo Legislativo</h2>
-        <nav className="grid" style={{ gap: '0.5rem' }}>
-          <Link href="/dashboard">Dashboard</Link>
-          <Link href="/gabinetes">Gabinetes</Link>
-          <Link href="/projetos-legislativos">Projetos Legislativos</Link>
-          <Link href="/biblioteca-legislativa">Biblioteca Legislativa</Link>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="brand">
+          <div className="brand-mark">AL</div>
+          <div>
+            <div className="brand-title">Amygo Legislativo</div>
+            <div className="brand-subtitle">Inteligência institucional</div>
+          </div>
+        </div>
+        <nav className="sidebar-nav" aria-label="Navegação principal">
+          {navItems.map((item) => (
+            <Link key={item.href} className="sidebar-link" href={item.href}>
+              <span className="nav-icon" aria-hidden="true">
+                {item.icon}
+              </span>
+              <span>{item.label}</span>
+            </Link>
+          ))}
         </nav>
-        <form action={signOut} style={{ marginTop: '2rem' }}>
-          <button type="submit" className="button" style={{ width: '100%' }}>
+        <form action={signOut} className="sidebar-footer">
+          <button type="submit" className="button button-secondary" style={{ width: '100%' }}>
             Sair
           </button>
         </form>
       </aside>
-      <section>{children}</section>
+      <section className="content-shell">{children}</section>
     </div>
   );
 }

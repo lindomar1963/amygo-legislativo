@@ -30,8 +30,9 @@ export function ComparativeAnalysisPanel({
   const [state, action] = useActionState(generateAnaliseComparativa, initialState);
 
   return (
-    <section className="card grid" style={{ gap: '1rem' }}>
+    <section className="card card-section">
       <div>
+        <p className="eyebrow">Análise legislativa</p>
         <h2>Análise comparativa e minuta</h2>
         <p className="muted">
           Gere uma versão preliminar usando as normas marcadas como referência na biblioteca.
@@ -42,8 +43,8 @@ export function ComparativeAnalysisPanel({
         <p className="muted">Marque pelo menos uma norma como referência antes de gerar a análise.</p>
       ) : null}
 
-      {state.error ? <p style={{ color: '#b91c1c' }}>{state.error}</p> : null}
-      {state.success ? <p style={{ color: '#166534' }}>{state.success}</p> : null}
+      {state.error ? <p className="notice notice-danger">{state.error}</p> : null}
+      {state.success ? <p className="notice notice-success">{state.success}</p> : null}
 
       <form action={action}>
         <input type="hidden" name="projeto_id" value={projetoId} />

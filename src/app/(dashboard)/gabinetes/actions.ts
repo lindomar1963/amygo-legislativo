@@ -12,14 +12,14 @@ import type { Database } from '@/types/database';
 type GabineteInsert = Database['public']['Tables']['gabinetes']['Insert'];
 
 const gabineteSchema = z.object({
-  [GABINETE_FIELD_NAMES.nome]: z.string().trim().min(1, 'Nome e obrigatorio.'),
+  [GABINETE_FIELD_NAMES.nome]: z.string().trim().min(1, 'Nome é obrigatório.'),
   [GABINETE_FIELD_NAMES.esfera]: z.enum(['municipal', 'estadual', 'federal'], {
-    errorMap: () => ({ message: 'Esfera invalida.' })
+    errorMap: () => ({ message: 'Esfera inválida.' })
   }),
   [GABINETE_FIELD_NAMES.orgaoCasaLegislativa]: z
     .string()
     .trim()
-    .min(1, 'Orgao/Casa legislativa e obrigatorio.')
+    .min(1, 'Órgão/Casa legislativa é obrigatório.')
 });
 
 export type CreateGabineteState = {
@@ -44,7 +44,7 @@ export async function createGabinete(
 
   if (!parsed.success) {
     return {
-      error: 'Revise os campos obrigatorios.',
+      error: 'Revise os campos obrigatórios.',
       fieldErrors: parsed.error.flatten().fieldErrors
     };
   }
@@ -56,7 +56,7 @@ export async function createGabinete(
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return { error: 'Sessao expirada. Entre novamente para criar o gabinete.' };
+    return { error: 'Sessão expirada. Entre novamente para criar o gabinete.' };
   }
 
   let admin;
@@ -65,7 +65,7 @@ export async function createGabinete(
     await ensureUserProfile(admin, user);
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : 'Nao foi possivel preparar a criacao do gabinete.'
+      error: error instanceof Error ? error.message : 'Não foi possível preparar a criação do gabinete.'
     };
   }
 
@@ -84,7 +84,7 @@ export async function createGabinete(
 
   if (gabineteError || !gabinete) {
     return {
-      error: gabineteError?.message ?? 'Nao foi possivel criar o gabinete.'
+      error: gabineteError?.message ?? 'Não foi possível criar o gabinete.'
     };
   }
 
@@ -99,7 +99,7 @@ export async function createGabinete(
     await admin.from('gabinetes').delete().eq('id', gabinete.id);
 
     return {
-      error: `Gabinete nao criado: ${membroError.message}`
+      error: `Gabinete não criado: ${membroError.message}`
     };
   }
 

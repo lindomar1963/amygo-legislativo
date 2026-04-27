@@ -12,10 +12,10 @@ import type { Database } from '@/types/database';
 type ProjetoInsert = Database['public']['Tables']['projetos_legislativos']['Insert'];
 
 const projetoSchema = z.object({
-  [PROJETO_FIELD_NAMES.gabineteId]: z.string().uuid('Selecione um gabinete valido.'),
-  [PROJETO_FIELD_NAMES.titulo]: z.string().trim().min(1, 'Titulo e obrigatorio.'),
+  [PROJETO_FIELD_NAMES.gabineteId]: z.string().uuid('Selecione um gabinete válido.'),
+  [PROJETO_FIELD_NAMES.titulo]: z.string().trim().min(1, 'Título é obrigatório.'),
   [PROJETO_FIELD_NAMES.tipo]: z.enum(PROJETO_TIPOS, {
-    errorMap: () => ({ message: 'Tipo de projeto invalido.' })
+    errorMap: () => ({ message: 'Tipo de projeto inválido.' })
   }),
   [PROJETO_FIELD_NAMES.ementa]: z.string().trim().optional()
 });
@@ -45,7 +45,7 @@ export async function createProjeto(
 
   if (!parsed.success) {
     return {
-      error: 'Revise os campos obrigatorios.',
+      error: 'Revise os campos obrigatórios.',
       fieldErrors: parsed.error.flatten().fieldErrors
     };
   }
@@ -57,7 +57,7 @@ export async function createProjeto(
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return { error: 'Sessao expirada. Entre novamente para criar o projeto.' };
+    return { error: 'Sessão expirada. Entre novamente para criar o projeto.' };
   }
 
   let admin;
@@ -66,7 +66,7 @@ export async function createProjeto(
     await ensureUserProfile(admin, user);
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : 'Nao foi possivel preparar a criacao do projeto.'
+      error: error instanceof Error ? error.message : 'Não foi possível preparar a criação do projeto.'
     };
   }
 
@@ -77,7 +77,7 @@ export async function createProjeto(
     .single();
 
   if (gabineteError || !gabinete) {
-    return { error: 'Selecione um gabinete vinculado ao seu usuario.' };
+    return { error: 'Selecione um gabinete vinculado ao seu usuário.' };
   }
 
   const projetoToInsert: ProjetoInsert = {
@@ -98,7 +98,7 @@ export async function createProjeto(
     .single();
 
   if (projetoError || !projeto) {
-    return { error: `Nao foi possivel criar o projeto: ${projetoError?.message ?? 'resposta sem projeto criado'}` };
+    return { error: `Não foi possível criar o projeto: ${projetoError?.message ?? 'resposta sem projeto criado'}` };
   }
 
   revalidatePath('/dashboard');

@@ -9,20 +9,26 @@ type Projeto = Pick<
 
 export function ProjetosList({ projetos }: { projetos: Projeto[] }) {
   return (
-    <div className="card">
-      <h2>Projetos Legislativos</h2>
+    <div className="card card-section">
+      <div>
+        <p className="eyebrow">Carteira legislativa</p>
+        <h2>Projetos Legislativos</h2>
+      </div>
       {projetos.length === 0 ? <p className="muted">Nenhum projeto legislativo cadastrado.</p> : null}
-      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+      <ul className="list">
         {projetos.map((projeto) => (
-          <li key={projeto.id} style={{ borderTop: '1px solid var(--border)', padding: '0.75rem 0' }}>
-            <Link href={`/projetos-legislativos/${projeto.id}`}>
-              <strong>{projeto.titulo}</strong>
-            </Link>
-            <p className="muted" style={{ margin: '0.25rem 0' }}>
-              {projeto.tipo} • {projeto.status_fluxo}
-            </p>
-            <p style={{ margin: 0 }}>{projeto.ementa ?? 'Sem ementa.'}</p>
-            <Link className="button" href={`/projetos-legislativos/${projeto.id}`} style={{ marginTop: '0.75rem', display: 'inline-block' }}>
+          <li key={projeto.id} className="list-card">
+            <div>
+              <Link className="section-link" href={`/projetos-legislativos/${projeto.id}`}>
+                <strong>{projeto.titulo}</strong>
+              </Link>
+              <p className="muted" style={{ margin: '0.35rem 0' }}>
+                <span className="badge badge-minuta-generated">{projeto.tipo}</span>{' '}
+                <span className="badge badge-draft">{projeto.status_fluxo}</span>
+              </p>
+              <p style={{ margin: 0 }}>{projeto.ementa ?? 'Sem ementa.'}</p>
+            </div>
+            <Link className="button button-secondary" href={`/projetos-legislativos/${projeto.id}`}>
               Abrir projeto
             </Link>
           </li>

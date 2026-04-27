@@ -7,8 +7,9 @@ export default async function ProjetosLegislativosPage() {
   const [gabinetes, projetos] = await Promise.all([getGabinetes(), getProjetos()]);
 
   return (
-    <main className="grid" style={{ gap: '1rem' }}>
-      <header>
+    <main className="page">
+      <header className="page-header">
+        <p className="eyebrow">Pipeline legislativo</p>
         <h1>Projetos Legislativos</h1>
         <p className="muted">Listagem central de projetos por gabinete, tipo e status de tramitação interna.</p>
       </header>

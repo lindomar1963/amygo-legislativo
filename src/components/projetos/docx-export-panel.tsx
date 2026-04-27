@@ -6,14 +6,15 @@ export function DocxExportPanel({
   canExport: boolean;
 }) {
   return (
-    <section className="card grid" style={{ gap: '1rem' }}>
+    <section className="card card-section">
       <div>
+        <p className="eyebrow">Protocolo</p>
         <h2>Exportação DOCX</h2>
         <p className="muted">Exporte a minuta e a justificativa em arquivo institucional editável.</p>
       </div>
 
       {!canExport ? (
-        <p style={{ color: '#92400e' }}>A exportação fica disponível depois da justificativa.</p>
+        <p className="notice notice-warning">A exportação fica disponível depois da justificativa.</p>
       ) : null}
 
       {canExport ? (

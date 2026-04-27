@@ -25,7 +25,7 @@ function ReferenceButton({ disabled }: { disabled: boolean }) {
 
   return (
     <button className="button" type="submit" disabled={disabled || pending}>
-      {pending ? 'Marcando...' : disabled ? 'Ja usada como referencia' : 'Usar como referencia'}
+      {pending ? 'Marcando...' : disabled ? 'Já usada como referência' : 'Usar como referência'}
     </button>
   );
 }
@@ -45,26 +45,27 @@ export function NormasBibliotecaPanel({
   const referenciaIds = new Set(referencias.map((referencia) => referencia.norma_id));
 
   return (
-    <section className="card grid" style={{ gap: '1rem' }}>
+    <section className="card card-section">
       <div>
+        <p className="eyebrow">Matriz de adaptação</p>
         <h2>Normas da Biblioteca Relacionadas</h2>
         <p className="muted">
-          Use sua biblioteca interna para escolher normas que servirao como matriz de comparacao e adaptacao.
+          Use sua biblioteca interna para escolher normas que servirão como matriz de comparação e adaptação.
         </p>
       </div>
 
       {setupError ? (
-        <div className="card" style={{ borderColor: '#fca5a5', background: '#fef2f2' }}>
+        <div className="notice notice-danger">
           <strong>Banco de dados pendente</strong>
-          <p style={{ color: '#b91c1c' }}>{setupError}</p>
+          <p>{setupError}</p>
           <p className="muted">
             Aplique a migration supabase/migrations/202604260002_projeto_normas_referencias.sql no Supabase.
           </p>
         </div>
       ) : null}
 
-      {state.error ? <p style={{ color: '#b91c1c' }}>{state.error}</p> : null}
-      {state.success ? <p style={{ color: '#166534' }}>{state.success}</p> : null}
+      {state.error ? <p className="notice notice-danger">{state.error}</p> : null}
+      {state.success ? <p className="notice notice-success">{state.success}</p> : null}
 
       {normas.length === 0 ? (
         <p className="muted">Nenhuma norma semelhante foi encontrada na sua biblioteca ainda.</p>
@@ -75,13 +76,16 @@ export function NormasBibliotecaPanel({
           const isReferenced = referenciaIds.has(norma.id);
 
           return (
-            <article key={norma.id} className="card grid" style={{ gap: '0.65rem' }}>
+            <article key={norma.id} className="list-card">
               <div>
                 <strong>{norma.titulo}</strong>
                 <p className="muted" style={{ margin: '0.25rem 0' }}>
-                  {norma.tipo} {norma.numero ? `n. ${norma.numero}` : ''} {norma.ano ? `/${norma.ano}` : ''} -{' '}
-                  {norma.esfera}
-                  {norma.uf ? `/${norma.uf}` : ''}
+                  <span className="badge badge-minuta-generated">{norma.tipo}</span>{' '}
+                  <span className="badge badge-draft">
+                    {norma.esfera}
+                    {norma.uf ? `/${norma.uf}` : ''}
+                  </span>{' '}
+                  {norma.numero ? `n. ${norma.numero}` : ''} {norma.ano ? `/${norma.ano}` : ''}
                   {norma.municipio ? ` - ${norma.municipio}` : ''}
                 </p>
                 <p style={{ margin: 0 }}>{norma.ementa ?? 'Sem ementa cadastrada.'}</p>
@@ -98,7 +102,7 @@ export function NormasBibliotecaPanel({
               </form>
 
               {norma.fonte_url ? (
-                <a href={norma.fonte_url} target="_blank" rel="noreferrer">
+                <a className="section-link" href={norma.fonte_url} target="_blank" rel="noreferrer">
                   Abrir fonte oficial
                 </a>
               ) : null}

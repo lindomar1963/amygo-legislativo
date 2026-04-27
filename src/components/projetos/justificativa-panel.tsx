@@ -15,7 +15,7 @@ function GenerateJustificativaButton({ disabled }: { disabled: boolean }) {
 
   return (
     <button className="button" type="submit" disabled={disabled || pending}>
-      {pending ? 'Gerando...' : 'Gerar justificativa'}
+      {pending ? 'Elaborando...' : 'Elaborar justificativa'}
     </button>
   );
 }
@@ -30,20 +30,19 @@ export function JustificativaPanel({
   const [state, action] = useActionState(generateJustificativa, initialState);
 
   return (
-    <section className="card grid" style={{ gap: '1rem' }}>
+    <section className="card card-section">
       <div>
+        <p className="eyebrow">Fundamentação</p>
         <h2>Justificativa</h2>
-        <p className="muted">
-          Esta etapa ficará disponível após a validação técnica da minuta.
-        </p>
+        <p className="muted">Esta etapa ficará disponível após a validação técnica da minuta.</p>
       </div>
 
       {!approvedMinuta ? (
-        <p style={{ color: '#92400e' }}>Minuta precisa ser aprovada antes de gerar justificativa.</p>
+        <p className="notice notice-warning">Minuta precisa ser validada antes da elaboração da justificativa.</p>
       ) : null}
 
-      {state.error ? <p style={{ color: '#b91c1c' }}>{state.error}</p> : null}
-      {state.success ? <p style={{ color: '#166534' }}>{state.success}</p> : null}
+      {state.error ? <p className="notice notice-danger">{state.error}</p> : null}
+      {state.success ? <p className="notice notice-success">{state.success}</p> : null}
 
       <form action={action}>
         <input type="hidden" name="projeto_id" value={projetoId} />
