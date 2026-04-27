@@ -410,12 +410,12 @@ tbody tr:hover {
   border: 0;
   border-radius: var(--radius-sm);
   padding: 0.72rem 1rem;
-  background: linear-gradient(135deg, var(--green) 0%, #00c853 100%);
-  color: var(--navy);
+  background: linear-gradient(135deg, #1ab800 0%, #0f7a2f 100%);
+  color: var(--white);
   cursor: pointer;
   font: inherit;
   font-weight: 800;
-  box-shadow: 0 0 22px rgba(46, 220, 16, 0.32);
+  box-shadow: 0 0 18px rgba(26, 184, 0, 0.28);
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
@@ -423,9 +423,15 @@ tbody tr:hover {
 }
 
 .button:hover {
-  color: var(--navy);
-  transform: translateY(-2px);
-  box-shadow: 0 0 36px rgba(46, 220, 16, 0.5);
+  color: var(--white);
+  background: linear-gradient(135deg, #2edc10 0%, #1ab800 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 0 28px rgba(26, 184, 0, 0.45);
+}
+
+.button:active {
+  transform: translateY(0);
+  box-shadow: 0 0 10px rgba(26, 184, 0, 0.25);
 }
 
 .button:disabled,
@@ -456,8 +462,15 @@ tbody tr:hover {
 }
 
 .button-success {
-  color: var(--navy);
-  background: linear-gradient(135deg, var(--green), var(--green2));
+  color: var(--white);
+  background: linear-gradient(135deg, #1ab800 0%, #0f7a2f 100%);
+  box-shadow: 0 0 18px rgba(26, 184, 0, 0.28);
+}
+
+.button-success:hover {
+  color: var(--white);
+  background: linear-gradient(135deg, #2edc10 0%, #1ab800 100%);
+  box-shadow: 0 0 28px rgba(26, 184, 0, 0.45);
 }
 
 .input,
