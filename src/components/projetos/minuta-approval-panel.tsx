@@ -34,7 +34,7 @@ export function MinutaApprovalPanel({
   return (
     <section className="card grid" style={{ gap: '1rem' }}>
       <div>
-        <h2>Aprovacao humana da minuta</h2>
+        <h2>Aprovacao da minuta</h2>
         <p className="muted">
           A justificativa so deve ser gerada depois que a minuta for revisada e aprovada pelo usuario.
         </p>

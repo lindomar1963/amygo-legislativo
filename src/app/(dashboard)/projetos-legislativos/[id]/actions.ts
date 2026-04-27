@@ -213,7 +213,7 @@ Art. 5o Esta Lei entra em vigor na data de sua publicacao.
 
 OBSERVACAO
 
-Este texto e uma primeira versao de trabalho. A justificativa deve ser gerada somente depois da aprovacao humana da minuta.`;
+Este texto e uma primeira versao de trabalho. A justificativa deve ser gerada somente apos validacao da minuta.`;
 }
 
 function assertMinutaApproved(approved_minuta: boolean) {
@@ -246,7 +246,7 @@ Sob o aspecto administrativo, a medida busca conferir maior seguranca juridica, 
 
 Quanto ao impacto orcamentario, quando houver necessidade de despesa publica, sua execucao devera observar as dotacoes orcamentarias proprias e a legislacao fiscal vigente.
 
-Ressalta-se que a minuta foi submetida a aprovacao humana no fluxo interno do projeto antes da geracao desta justificativa, em observancia ao procedimento oficial do Amygo Legislativo.
+Ressalta-se que a minuta foi submetida a validacao no fluxo interno do projeto antes da geracao desta justificativa, em observancia ao procedimento oficial do Amygo Legislativo.
 
 Diante do exposto, contamos com o apoio dos nobres pares para a aprovacao da presente proposicao.
 
@@ -528,7 +528,7 @@ export async function approveMinuta(
     modelUsed: null,
     fromStatus: projeto.data.workflow_status,
     toStatus: nextWorkflowStatus,
-    message: 'Minuta aprovada por acao humana.'
+    message: 'Minuta aprovada apos validacao.'
   });
 
   if (logError) {
@@ -617,7 +617,7 @@ export async function generateJustificativa(
     projeto_id: projetoId,
     numero_versao: nextVersion,
     conteudo_texto: conteudo,
-    resumo_alteracoes: 'Justificativa gerada apos aprovacao humana da minuta.',
+    resumo_alteracoes: 'Justificativa gerada apos validacao da minuta.',
     criado_por: user.id,
     origem: 'ia'
   });
