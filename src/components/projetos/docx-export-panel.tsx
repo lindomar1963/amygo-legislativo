@@ -8,12 +8,12 @@ export function DocxExportPanel({
   return (
     <section className="card grid" style={{ gap: '1rem' }}>
       <div>
-        <h2>Exportacao DOCX</h2>
-        <p className="muted">Exporte a minuta e a justificativa em arquivo institucional editavel.</p>
+        <h2>Exportação DOCX</h2>
+        <p className="muted">Exporte a minuta e a justificativa em arquivo institucional editável.</p>
       </div>
 
       {!canExport ? (
-        <p style={{ color: '#92400e' }}>A exportacao fica disponivel depois da justificativa.</p>
+        <p style={{ color: '#92400e' }}>A exportação fica disponível depois da justificativa.</p>
       ) : null}
 
       {canExport ? (

@@ -14,12 +14,15 @@ type WorkflowStatus = Database['public']['Tables']['projetos_legislativos']['Row
 
 function sanitizeFilename(value: string) {
   return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/[\\/:*?"<>|]+/g, '-')
+    .replace(/[^\p{L}\p{N}._-]+/gu, '-')
     .replace(/^-+|-+$/g, '')
     .toLowerCase()
     .slice(0, 80);
+}
+
+function normalizeLegislativeOrdinals(value: string) {
+  return value.replace(/\bArt\. (\d+)o\b/g, 'Art. $1º');
 }
 
 function extractMinuta(content: string) {
@@ -41,7 +44,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return new Response('Sessao expirada. Entre novamente para exportar DOCX.', { status: 401 });
+    return new Response('Sessão expirada. Entre novamente para exportar DOCX.', { status: 401 });
   }
 
   const projeto = await supabase
@@ -51,7 +54,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     .single();
 
   if (projeto.error || !projeto.data) {
-    return new Response('Projeto nao encontrado ou nao vinculado ao seu usuario.', { status: 404 });
+    return new Response('Projeto não encontrado ou não vinculado ao seu usuário.', { status: 404 });
   }
 
   if (projeto.data.workflow_status !== 'justificativa_generated') {
@@ -68,7 +71,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   ]);
 
   if (versoes.error) {
-    return new Response(`Nao foi possivel carregar as versoes: ${versoes.error.message}`, { status: 500 });
+    return new Response(`Não foi possível carregar as versões: ${versoes.error.message}`, { status: 500 });
   }
 
   const minuta = (versoes.data ?? []).find((versao) => versao.conteudo_texto.includes('MINUTA BASE PARA DESENVOLVIMENTO'));
@@ -79,7 +82,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   );
 
   if (!minuta || !justificativa) {
-    return new Response('Minuta e justificativa precisam existir antes da exportacao DOCX.', { status: 400 });
+    return new Response('Minuta e justificativa precisam existir antes da exportação DOCX.', { status: 400 });
   }
 
   let admin;
@@ -87,15 +90,17 @@ export async function GET(_request: Request, { params }: RouteContext) {
     admin = createAdminClient();
     await ensureUserProfile(admin, user);
   } catch (error) {
-    return new Response(error instanceof Error ? error.message : 'Nao foi possivel preparar a exportacao DOCX.', {
+    return new Response(error instanceof Error ? error.message : 'Não foi possível preparar a exportação DOCX.', {
       status: 500
     });
   }
 
   const latestVersionNumber = (versoes.data ?? [])[0]?.numero_versao ?? 0;
   const nextVersion = latestVersionNumber + 1;
-  const minutaText = extractMinuta(minuta.conteudo_texto);
-  const justificativaText = justificativa.conteudo_texto.replace(/^JUSTIFICATIVA\s*/i, '').trim();
+  const minutaText = normalizeLegislativeOrdinals(extractMinuta(minuta.conteudo_texto));
+  const justificativaText = normalizeLegislativeOrdinals(
+    justificativa.conteudo_texto.replace(/^JUSTIFICATIVA\s*/i, '').trim()
+  );
   const casaLegislativa = gabinete.data?.orgao_casa_legislativa ?? 'Casa Legislativa';
   const autor = gabinete.data?.nome ?? user.email ?? 'Autor';
   const cargoAutor =
@@ -111,7 +116,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     timeZone: 'America/Manaus'
   }).format(new Date());
   const exportText = [
-    'PROJETO DE LEI No ____ / ______',
+    'PROJETO DE LEI Nº ____ / ______',
     '',
     projeto.data.titulo,
     '',
@@ -134,13 +139,13 @@ export async function GET(_request: Request, { params }: RouteContext) {
     projeto_id: id,
     numero_versao: nextVersion,
     conteudo_texto: exportText,
-    resumo_alteracoes: 'Versao exportada em DOCX.',
+    resumo_alteracoes: 'Versão exportada em DOCX.',
     criado_por: user.id,
     origem: 'manual'
   });
 
   if (versionError) {
-    return new Response(`Nao foi possivel salvar a versao exportada: ${versionError.message}`, { status: 500 });
+    return new Response(`Não foi possível salvar a versão exportada: ${versionError.message}`, { status: 500 });
   }
 
   const fromStatus = projeto.data.workflow_status as WorkflowStatus;
@@ -151,7 +156,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     .eq('id', id);
 
   if (workflowError) {
-    return new Response(`DOCX criado, mas nao foi possivel atualizar o status: ${workflowError.message}`, {
+    return new Response(`DOCX criado, mas não foi possível atualizar o status: ${workflowError.message}`, {
       status: 500
     });
   }
@@ -178,7 +183,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   });
 
   if (logError) {
-    return new Response(`DOCX criado, mas nao foi possivel registrar o log: ${logError.message}`, { status: 500 });
+    return new Response(`DOCX criado, mas não foi possível registrar o log: ${logError.message}`, { status: 500 });
   }
 
   const docx = createSimpleDocx({
@@ -192,11 +197,12 @@ export async function GET(_request: Request, { params }: RouteContext) {
     casaLegislativa
   });
   const filename = `${sanitizeFilename(projeto.data.titulo) || 'projeto-legislativo'}.docx`;
+  const encodedFilename = encodeURIComponent(filename);
 
   return new Response(new Uint8Array(docx), {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Disposition': `attachment; filename="projeto-legislativo.docx"; filename*=UTF-8''${encodedFilename}`,
       'Cache-Control': 'no-store'
     }
   });

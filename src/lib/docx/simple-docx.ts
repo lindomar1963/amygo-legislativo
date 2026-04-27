@@ -16,7 +16,7 @@ function escapeXml(value: string) {
 }
 
 function runProperties({ bold, italic }: Pick<ParagraphOptions, 'bold' | 'italic'>) {
-  return `<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/>${
+  return `<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/>${
     bold ? '<w:b/>' : ''
   }${italic ? '<w:i/>' : ''}</w:rPr>`;
 }
@@ -74,8 +74,8 @@ function zip(entries: { name: string; content: string }[]) {
   const { dosDate, time } = dosDateTime();
 
   for (const entry of entries) {
-    const name = Buffer.from(entry.name);
-    const content = Buffer.from(entry.content);
+    const name = Buffer.from(entry.name, 'utf8');
+    const content = Buffer.from(entry.content, 'utf8');
     const crc = crc32(content);
 
     const localHeader = Buffer.alloc(30);
@@ -156,7 +156,7 @@ export function createSimpleDocx({
   const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:body>
-    ${paragraph('PROJETO DE LEI No ____ / ______', { align: 'center', bold: true, uppercase: true, spacingAfter: 240 })}
+    ${paragraph('PROJETO DE LEI Nº ____ / ______', { align: 'center', bold: true, uppercase: true, spacingAfter: 240 })}
     ${paragraph(ementa ?? titulo, { align: 'both', italic: true, spacingAfter: 320 })}
     ${paragraph(`${casaLegislativa.toUpperCase()} DECRETA:`, { align: 'center', bold: true, spacingAfter: 320 })}
     ${documentParagraphs(minuta.split(/\r?\n/))}
@@ -177,7 +177,7 @@ export function createSimpleDocx({
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:docDefaults>
     <w:rPrDefault>
-      <w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>
+      <w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>
     </w:rPrDefault>
     <w:pPrDefault>
       <w:pPr><w:jc w:val="both"/><w:spacing w:line="360" w:lineRule="auto"/></w:pPr>

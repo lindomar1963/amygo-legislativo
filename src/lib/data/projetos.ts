@@ -41,15 +41,12 @@ const stopWords = new Set([
 ]);
 
 function normalizeText(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
+  return value.toLocaleLowerCase('pt-BR');
 }
 
 function extractTerms(projeto: ProjetoDetalhe) {
   return normalizeText([projeto.titulo, projeto.ementa, projeto.tipo].filter(Boolean).join(' '))
-    .split(/[^a-z0-9]+/)
+    .split(/[^\p{L}\p{N}]+/u)
     .filter((term) => term.length > 3 && !stopWords.has(term))
     .slice(0, 12);
 }

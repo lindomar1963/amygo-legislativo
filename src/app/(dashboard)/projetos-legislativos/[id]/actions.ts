@@ -117,7 +117,7 @@ async function logGenerationEvent({
   });
 
   if (error) {
-    return `Status atualizado, mas nao foi possivel registrar em generation_logs: ${error.message}`;
+    return `Status atualizado, mas não foi possível registrar em generation_logs: ${error.message}`;
   }
 
   return null;
@@ -141,6 +141,10 @@ function excerpt(value: string | null | undefined, maxLength = 900) {
   return `${normalized.slice(0, maxLength).trim()}...`;
 }
 
+function normalizeLegislativeOrdinals(value: string) {
+  return value.replace(/\bArt\. (\d+)o\b/g, 'Art. $1º');
+}
+
 function buildAnaliseComparativa({
   projeto,
   gabinete,
@@ -152,73 +156,73 @@ function buildAnaliseComparativa({
 }) {
   const gabineteDestino = gabinete
     ? `${gabinete.nome} - ${gabinete.orgao_casa_legislativa} (${gabinete.esfera})`
-    : 'Gabinete nao localizado';
+    : 'Gabinete não localizado';
   const normasTexto = normas
     .map(
       (norma, index) => `${index + 1}. ${normaLabel(norma)}
 Origem: ${norma.orgao_origem}
-Tema: ${norma.tema ?? 'Nao informado'}
+Tema: ${norma.tema ?? 'Não informado'}
 Ementa: ${norma.ementa ?? 'Sem ementa cadastrada.'}
-Fonte: ${norma.fonte_url ?? 'Nao informada'}
+Fonte: ${norma.fonte_url ?? 'Não informada'}
 Trecho de apoio: ${excerpt(norma.texto_integral)}`
     )
     .join('\n\n');
 
-  return `ANALISE COMPARATIVA PRELIMINAR
+  return normalizeLegislativeOrdinals(`ANÁLISE COMPARATIVA PRELIMINAR
 
 Projeto: ${projeto.titulo}
 Tipo: ${projeto.tipo}
 Gabinete solicitante: ${gabineteDestino}
 Ementa/resumo do projeto: ${projeto.ementa ?? 'Sem ementa cadastrada.'}
 
-NORMAS USADAS COMO REFERENCIA
+NORMAS USADAS COMO REFERÊNCIA
 
 ${normasTexto}
 
-PONTOS APROVEITAVEIS
+PONTOS APROVEITÁVEIS
 
-1. Usar a norma de referencia como matriz de organizacao tematica, preservando apenas o que for compativel com a competencia do ente solicitante.
-2. Aproveitar conceitos, definicoes e justificativas que dialoguem diretamente com a finalidade do projeto.
-3. Manter registro da origem da norma, do numero, do ano e do orgao responsavel para permitir auditoria da adaptacao.
+1. Usar a norma de referência como matriz de organização temática, preservando apenas o que for compatível com a competência do ente solicitante.
+2. Aproveitar conceitos, definições e justificativas que dialoguem diretamente com a finalidade do projeto.
+3. Manter registro da origem da norma, do número, do ano e do órgão responsável para permitir auditoria da adaptação.
 
-PONTOS QUE EXIGEM ADAPTACAO
+PONTOS QUE EXIGEM ADAPTAÇÃO
 
-1. Ajustar todos os orgaos, autoridades e procedimentos para a realidade de ${gabinete?.orgao_casa_legislativa ?? 'seu orgao legislativo'}.
-2. Conferir se a materia pertence a competencia ${gabinete?.esfera ?? 'do gabinete'} antes de protocolar.
-3. Revisar prazos, despesas, fonte orcamentaria e eventuais atribuicoes ao Poder Executivo.
-4. Remover referencias locais que pertencam exclusivamente ao ente federativo da norma original.
+1. Ajustar todos os órgãos, autoridades e procedimentos para a realidade de ${gabinete?.orgao_casa_legislativa ?? 'seu órgão legislativo'}.
+2. Conferir se a matéria pertence à competência ${gabinete?.esfera ?? 'do gabinete'} antes de protocolar.
+3. Revisar prazos, despesas, fonte orçamentária e eventuais atribuições ao Poder Executivo.
+4. Remover referências locais que pertençam exclusivamente ao ente federativo da norma original.
 
 RISCOS E CUIDADOS LEGISLATIVOS
 
 1. Verificar constitucionalidade formal e material.
-2. Evitar criacao de obrigacoes administrativas sem previsao de impacto ou competencia.
-3. Conferir se ja existe norma local sobre o mesmo tema.
-4. Submeter a minuta a revisao juridica antes de protocolo.
+2. Evitar criação de obrigações administrativas sem previsão de impacto ou competência.
+3. Conferir se já existe norma local sobre o mesmo tema.
+4. Submeter a minuta à revisão jurídica antes de protocolo.
 
 MINUTA BASE PARA DESENVOLVIMENTO
 
 PROJETO DE LEI
 
-Ementa: ${projeto.ementa ?? 'Dispoe sobre materia a ser detalhada conforme a finalidade do projeto.'}
+Ementa: ${projeto.ementa ?? 'Dispõe sobre matéria a ser detalhada conforme a finalidade do projeto.'}
 
-Art. 1o Fica instituida, no ambito de ${gabinete?.orgao_casa_legislativa ?? 'ente competente'}, a disciplina relacionada ao tema objeto deste projeto, conforme a finalidade indicada na ementa.
+Art. 1º Fica instituída, no âmbito de ${gabinete?.orgao_casa_legislativa ?? 'ente competente'}, a disciplina relacionada ao tema objeto deste projeto, conforme a finalidade indicada na ementa.
 
-Art. 2o Para os fins desta Lei, deverao ser observados os principios da legalidade, eficiencia, transparencia, interesse publico e adequacao a realidade local.
+Art. 2º Para os fins desta Lei, deverão ser observados os princípios da legalidade, eficiência, transparência, interesse público e adequação à realidade local.
 
-Art. 3o O Poder competente podera regulamentar esta Lei, quando necessario, respeitadas as competencias constitucionais e legais aplicaveis.
+Art. 3º O Poder competente poderá regulamentar esta Lei, quando necessário, respeitadas as competências constitucionais e legais aplicáveis.
 
-Art. 4o As despesas decorrentes da execucao desta Lei, quando houver, correrao por conta das dotacoes orcamentarias proprias, observada a legislacao fiscal vigente.
+Art. 4º As despesas decorrentes da execução desta Lei, quando houver, correrão por conta das dotações orçamentárias próprias, observada a legislação fiscal vigente.
 
-Art. 5o Esta Lei entra em vigor na data de sua publicacao.
+Art. 5º Esta Lei entra em vigor na data de sua publicação.
 
-OBSERVACAO
+OBSERVAÇÃO
 
-Este texto e uma primeira versao de trabalho. A justificativa deve ser gerada somente apos validacao da minuta.`;
+Este texto é uma versão preliminar. A justificativa deve ser elaborada somente após validação técnica da minuta.`);
 }
 
 function assertMinutaApproved(approved_minuta: boolean) {
   if (!approved_minuta) {
-    throw new Error('Minuta precisa ser aprovada antes de gerar justificativa.');
+    throw new Error('Minuta precisa ser validada antes da elaboração da justificativa.');
   }
 }
 
@@ -238,19 +242,19 @@ function buildJustificativa({
 Senhor Presidente,
 Senhoras e Senhores Parlamentares,
 
-Submetemos a apreciacao desta Casa Legislativa o presente projeto, intitulado "${titulo}", que tem por finalidade ${ementa ?? 'disciplinar materia de interesse publico conforme a minuta aprovada'}.
+Submetemos à apreciação desta Casa Legislativa o presente projeto, intitulado "${titulo}", que tem por finalidade ${ementa ?? 'disciplinar matéria de interesse público conforme a minuta validada'}.
 
-A proposta foi elaborada a partir de analise tecnica e comparativa de norma de referencia, respeitando a necessidade de adequacao a realidade institucional de ${orgaoCasaLegislativa ?? 'seu orgao legislativo'}.
+A proposta foi elaborada a partir de análise técnica e comparativa de norma de referência, respeitando a necessidade de adequação à realidade institucional de ${orgaoCasaLegislativa ?? 'seu órgão legislativo'}.
 
-Sob o aspecto administrativo, a medida busca conferir maior seguranca juridica, previsibilidade e organizacao normativa ao tema tratado, permitindo que a execucao da politica publica ocorra de forma compativel com os principios da legalidade, eficiencia, transparencia e interesse publico.
+Sob o aspecto administrativo, a medida busca conferir maior segurança jurídica, previsibilidade e organização normativa ao tema tratado, permitindo que a execução da política pública ocorra de forma compatível com os princípios da legalidade, eficiência, transparência e interesse público.
 
-Quanto ao impacto orcamentario, quando houver necessidade de despesa publica, sua execucao devera observar as dotacoes orcamentarias proprias e a legislacao fiscal vigente.
+Quanto ao impacto orçamentário, quando houver necessidade de despesa pública, sua execução deverá observar as dotações orçamentárias próprias e a legislação fiscal vigente.
 
-Ressalta-se que a minuta foi submetida a validacao no fluxo interno do projeto antes da geracao desta justificativa, em observancia ao procedimento oficial do Amygo Legislativo.
+Ressalta-se que a minuta foi submetida à validação técnica antes da elaboração da justificativa, em observância ao procedimento oficial do Amygo Legislativo.
 
-Diante do exposto, contamos com o apoio dos nobres pares para a aprovacao da presente proposicao.
+Diante do exposto, contamos com o apoio dos nobres pares para a aprovação da presente proposição.
 
-${gabineteNome ?? 'Gabinete responsavel'}`;
+${gabineteNome ?? 'Gabinete responsável'}`;
 }
 
 export async function addProjetoNormaReferencia(
@@ -271,7 +275,7 @@ export async function addProjetoNormaReferencia(
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return { error: 'Sessao expirada. Entre novamente para vincular a norma.' };
+    return { error: 'Sessão expirada. Entre novamente para vincular a norma.' };
   }
 
   const [projeto, norma] = await Promise.all([
@@ -280,11 +284,11 @@ export async function addProjetoNormaReferencia(
   ]);
 
   if (projeto.error || !projeto.data) {
-    return { error: 'Projeto nao encontrado ou nao vinculado ao seu usuario.' };
+    return { error: 'Projeto não encontrado ou não vinculado ao seu usuário.' };
   }
 
   if (norma.error || !norma.data) {
-    return { error: 'Norma nao encontrada na sua biblioteca.' };
+    return { error: 'Norma não encontrada na sua biblioteca.' };
   }
 
   let admin;
@@ -293,7 +297,7 @@ export async function addProjetoNormaReferencia(
     await ensureUserProfile(admin, user);
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : 'Nao foi possivel preparar o vinculo da norma.'
+      error: error instanceof Error ? error.message : 'Não foi possível preparar o vínculo da norma.'
     };
   }
 
@@ -307,7 +311,7 @@ export async function addProjetoNormaReferencia(
   );
 
   if (error) {
-    return { error: `Nao foi possivel usar a norma como referencia: ${error.message}` };
+    return { error: `Não foi possível usar a norma como referência: ${error.message}` };
   }
 
   revalidatePath(`/projetos-legislativos/${projetoId}`);
@@ -323,7 +327,7 @@ export async function generateAnaliseComparativa(
   const projetoId = String(formData.get('projeto_id') ?? '');
 
   if (!projetoId) {
-    return { error: 'Projeto obrigatorio para gerar a analise.' };
+    return { error: 'Projeto obrigatório para gerar a análise.' };
   }
 
   const supabase = await createClient();
@@ -333,7 +337,7 @@ export async function generateAnaliseComparativa(
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return { error: 'Sessao expirada. Entre novamente para gerar a analise.' };
+    return { error: 'Sessão expirada. Entre novamente para gerar a análise.' };
   }
 
   const projeto = await supabase
@@ -343,7 +347,7 @@ export async function generateAnaliseComparativa(
     .single();
 
   if (projeto.error || !projeto.data) {
-    return { error: 'Projeto nao encontrado ou nao vinculado ao seu usuario.' };
+    return { error: 'Projeto não encontrado ou não vinculado ao seu usuário.' };
   }
 
   const [gabinete, referencias] = await Promise.all([
@@ -356,13 +360,13 @@ export async function generateAnaliseComparativa(
   ]);
 
   if (referencias.error) {
-    return { error: `Nao foi possivel carregar as normas de referencia: ${referencias.error.message}` };
+    return { error: `Não foi possível carregar as normas de referência: ${referencias.error.message}` };
   }
 
   const normaIds = (referencias.data ?? []).map((referencia) => referencia.norma_id);
 
   if (normaIds.length === 0) {
-    return { error: 'Marque uma norma da biblioteca como referencia antes de gerar a analise.' };
+    return { error: 'Marque uma norma da biblioteca como referência antes de gerar a análise.' };
   }
 
   const normas = await supabase
@@ -380,7 +384,7 @@ export async function generateAnaliseComparativa(
     await ensureUserProfile(admin, user);
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : 'Nao foi possivel preparar a geracao da analise.'
+      error: error instanceof Error ? error.message : 'Não foi possível preparar a análise.'
     };
   }
 
@@ -392,7 +396,7 @@ export async function generateAnaliseComparativa(
     .limit(1);
 
   if (latestVersion.error) {
-    return { error: `Nao foi possivel calcular a proxima versao: ${latestVersion.error.message}` };
+    return { error: `Não foi possível calcular a próxima versão: ${latestVersion.error.message}` };
   }
 
   const nextVersion = ((latestVersion.data?.[0]?.numero_versao as number | undefined) ?? 0) + 1;
@@ -406,13 +410,13 @@ export async function generateAnaliseComparativa(
     projeto_id: projetoId,
     numero_versao: nextVersion,
     conteudo_texto: conteudo,
-    resumo_alteracoes: 'Analise comparativa preliminar e minuta-base geradas a partir das normas de referencia.',
+    resumo_alteracoes: 'Análise comparativa preliminar e minuta-base elaboradas a partir das normas de referência.',
     criado_por: user.id,
     origem: 'ia'
   });
 
   if (error) {
-    return { error: `Nao foi possivel salvar a analise comparativa: ${error.message}` };
+    return { error: `Não foi possível salvar a análise comparativa: ${error.message}` };
   }
 
   const nextWorkflowStatus: WorkflowStatus = 'minuta_generated';
@@ -427,7 +431,7 @@ export async function generateAnaliseComparativa(
 
   if (workflowError) {
     return {
-      error: `Minuta salva, mas nao foi possivel atualizar o status do fluxo: ${workflowError.message}`
+      error: `Minuta salva, mas não foi possível atualizar o status do fluxo: ${workflowError.message}`
     };
   }
 
@@ -441,7 +445,7 @@ export async function generateAnaliseComparativa(
     modelUsed: 'template-local',
     fromStatus: projeto.data.workflow_status,
     toStatus: nextWorkflowStatus,
-    message: `Analise comparativa e minuta geradas como versao ${nextVersion}.`
+    message: `Análise comparativa e minuta elaboradas como versão ${nextVersion}.`
   });
 
   if (logError) {
@@ -450,7 +454,7 @@ export async function generateAnaliseComparativa(
 
   revalidatePath(`/projetos-legislativos/${projetoId}`);
 
-  return { success: `Analise comparativa gerada como versao ${nextVersion}.` };
+  return { success: `Análise comparativa elaborada como versão ${nextVersion}.` };
 }
 
 export async function approveMinuta(
@@ -471,7 +475,7 @@ export async function approveMinuta(
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return { error: 'Sessao expirada. Entre novamente para aprovar a minuta.' };
+    return { error: 'Sessão expirada. Entre novamente para validar a minuta.' };
   }
 
   const projeto = await supabase
@@ -481,7 +485,7 @@ export async function approveMinuta(
     .single();
 
   if (projeto.error || !projeto.data) {
-    return { error: 'Projeto nao encontrado ou nao vinculado ao seu usuario.' };
+    return { error: 'Projeto não encontrado ou não vinculado ao seu usuário.' };
   }
 
   const versoes = await supabase
@@ -500,7 +504,7 @@ export async function approveMinuta(
     await ensureUserProfile(admin, user);
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : 'Nao foi possivel preparar a aprovacao da minuta.'
+      error: error instanceof Error ? error.message : 'Não foi possível preparar a validação da minuta.'
     };
   }
 
@@ -515,7 +519,7 @@ export async function approveMinuta(
     .eq('id', projetoId);
 
   if (error) {
-    return { error: `Nao foi possivel aprovar a minuta: ${error.message}` };
+    return { error: `Não foi possível validar a minuta: ${error.message}` };
   }
 
   const logError = await logGenerationEvent({
@@ -528,7 +532,7 @@ export async function approveMinuta(
     modelUsed: null,
     fromStatus: projeto.data.workflow_status,
     toStatus: nextWorkflowStatus,
-    message: 'Minuta aprovada apos validacao.'
+    message: 'Minuta validada após validação técnica.'
   });
 
   if (logError) {
@@ -548,7 +552,7 @@ export async function generateJustificativa(
   const projetoId = String(formData.get('projeto_id') ?? '');
 
   if (!projetoId) {
-    return { error: 'Projeto obrigatorio para gerar justificativa.' };
+    return { error: 'Projeto obrigatório para elaborar justificativa.' };
   }
 
   const supabase = await createClient();
@@ -558,7 +562,7 @@ export async function generateJustificativa(
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return { error: 'Sessao expirada. Entre novamente para gerar justificativa.' };
+    return { error: 'Sessão expirada. Entre novamente para elaborar a justificativa.' };
   }
 
   const projeto = await supabase
@@ -568,13 +572,13 @@ export async function generateJustificativa(
     .single();
 
   if (projeto.error || !projeto.data) {
-    return { error: 'Projeto nao encontrado ou nao vinculado ao seu usuario.' };
+    return { error: 'Projeto não encontrado ou não vinculado ao seu usuário.' };
   }
 
   try {
     assertMinutaApproved(projeto.data.approved_minuta);
   } catch (error) {
-    return { error: error instanceof Error ? error.message : 'Minuta ainda nao aprovada.' };
+    return { error: error instanceof Error ? error.message : 'Minuta ainda não validada.' };
   }
 
   const [gabinete, latestVersion] = await Promise.all([
@@ -592,7 +596,7 @@ export async function generateJustificativa(
   ]);
 
   if (latestVersion.error || !latestVersion.data?.length) {
-    return { error: 'Nao ha minuta versionada para justificar.' };
+    return { error: 'Não há minuta versionada para justificar.' };
   }
 
   let admin;
@@ -601,7 +605,7 @@ export async function generateJustificativa(
     await ensureUserProfile(admin, user);
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : 'Nao foi possivel preparar a geracao da justificativa.'
+      error: error instanceof Error ? error.message : 'Não foi possível preparar a elaboração da justificativa.'
     };
   }
 
@@ -623,7 +627,7 @@ export async function generateJustificativa(
   });
 
   if (versaoError) {
-    return { error: `Nao foi possivel salvar a justificativa: ${versaoError.message}` };
+    return { error: `Não foi possível salvar a justificativa: ${versaoError.message}` };
   }
 
   const nextWorkflowStatus: WorkflowStatus = 'justificativa_generated';
@@ -636,7 +640,7 @@ export async function generateJustificativa(
 
   if (workflowError) {
     return {
-      error: `Justificativa salva, mas nao foi possivel atualizar o status do fluxo: ${workflowError.message}`
+      error: `Justificativa salva, mas não foi possível atualizar o status do fluxo: ${workflowError.message}`
     };
   }
 
@@ -650,7 +654,7 @@ export async function generateJustificativa(
     modelUsed: 'template-local',
     fromStatus: projeto.data.workflow_status,
     toStatus: nextWorkflowStatus,
-    message: `Justificativa gerada como versao ${nextVersion}.`
+    message: `Justificativa elaborada como versão ${nextVersion}.`
   });
 
   if (logError) {
@@ -659,7 +663,7 @@ export async function generateJustificativa(
 
   revalidatePath(`/projetos-legislativos/${projetoId}`);
 
-  return { success: `Justificativa gerada como versao ${nextVersion}.` };
+  return { success: `Justificativa elaborada como versão ${nextVersion}.` };
 }
 
 export async function registerDocxExport(
@@ -670,7 +674,7 @@ export async function registerDocxExport(
   const projetoId = String(formData.get('projeto_id') ?? '');
 
   if (!projetoId) {
-    return { error: 'Projeto obrigatorio para registrar exportacao DOCX.' };
+    return { error: 'Projeto obrigatório para registrar exportação DOCX.' };
   }
 
   const supabase = await createClient();
@@ -680,7 +684,7 @@ export async function registerDocxExport(
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return { error: 'Sessao expirada. Entre novamente para registrar exportacao DOCX.' };
+    return { error: 'Sessão expirada. Entre novamente para registrar exportação DOCX.' };
   }
 
   const projeto = await supabase
@@ -690,7 +694,7 @@ export async function registerDocxExport(
     .single();
 
   if (projeto.error || !projeto.data) {
-    return { error: 'Projeto nao encontrado ou nao vinculado ao seu usuario.' };
+    return { error: 'Projeto não encontrado ou não vinculado ao seu usuário.' };
   }
 
   let admin;
@@ -699,7 +703,7 @@ export async function registerDocxExport(
     await ensureUserProfile(admin, user);
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : 'Nao foi possivel preparar o registro da exportacao DOCX.'
+      error: error instanceof Error ? error.message : 'Não foi possível preparar o registro da exportação DOCX.'
     };
   }
 
@@ -713,7 +717,7 @@ export async function registerDocxExport(
 
   if (workflowError) {
     return {
-      error: `DOCX exportado, mas nao foi possivel atualizar o status do fluxo: ${workflowError.message}`
+      error: `DOCX exportado, mas não foi possível atualizar o status do fluxo: ${workflowError.message}`
     };
   }
 
@@ -727,7 +731,7 @@ export async function registerDocxExport(
     modelUsed: null,
     fromStatus: projeto.data.workflow_status,
     toStatus: nextWorkflowStatus,
-    message: 'Exportacao DOCX registrada no pipeline oficial.'
+    message: 'Exportação DOCX registrada no pipeline oficial.'
   });
 
   if (logError) {
@@ -736,5 +740,5 @@ export async function registerDocxExport(
 
   revalidatePath(`/projetos-legislativos/${projetoId}`);
 
-  return { success: 'Exportacao DOCX registrada no generation_logs.' };
+  return { success: 'Exportação DOCX registrada no generation_logs.' };
 }

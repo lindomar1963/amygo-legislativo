@@ -15,7 +15,7 @@ function GenerateButton({ disabled }: { disabled: boolean }) {
 
   return (
     <button className="button" type="submit" disabled={disabled || pending}>
-      {pending ? 'Gerando...' : 'Gerar analise comparativa'}
+      {pending ? 'Gerando...' : 'Gerar análise comparativa'}
     </button>
   );
 }
@@ -32,14 +32,14 @@ export function ComparativeAnalysisPanel({
   return (
     <section className="card grid" style={{ gap: '1rem' }}>
       <div>
-        <h2>Analise comparativa e minuta</h2>
+        <h2>Análise comparativa e minuta</h2>
         <p className="muted">
-          Gere uma primeira versao de trabalho usando as normas marcadas como referencia na biblioteca.
+          Gere uma versão preliminar usando as normas marcadas como referência na biblioteca.
         </p>
       </div>
 
       {!hasReferencias ? (
-        <p className="muted">Marque pelo menos uma norma como referencia antes de gerar a analise.</p>
+        <p className="muted">Marque pelo menos uma norma como referência antes de gerar a análise.</p>
       ) : null}
 
       {state.error ? <p style={{ color: '#b91c1c' }}>{state.error}</p> : null}
