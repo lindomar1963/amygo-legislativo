@@ -3,20 +3,23 @@
   --primary-bg: #061a2f;
   --secondary-bg: #0b2d4d;
   --accent-blue: #0a4d8f;
-  --primary-action: #138a5b;
-  --primary-action-dark: #0f6f49;
+  --graphite: #1f2937;
+  --graphite-light: #374151;
+  --primary-action: #f97316;
+  --primary-action-dark: #ea580c;
   --highlight: #d6a84f;
-  --surface: #f5f7fa;
+  --yellow-highlight: #facc15;
+  --surface: #f8fafc;
   --text: #0f172a;
   --muted: #5b677a;
-  --card: #ffffff;
+  --card: #f8fafc;
   --border: #dbe3ee;
   --danger: #b42318;
-  --success: #0f6f49;
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 18px 45px rgba(6, 26, 47, 0.1);
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
+  --success: #16a34a;
+  --shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 18px 45px rgba(0, 0, 0, 0.2);
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
   --radius-lg: 1rem;
   --sidebar-width: 264px;
 }
@@ -32,9 +35,7 @@ html {
 body {
   margin: 0;
   min-height: 100%;
-  background:
-    radial-gradient(circle at top right, rgba(10, 77, 143, 0.12), transparent 28rem),
-    var(--surface);
+  background: linear-gradient(160deg, var(--primary-bg) 0%, var(--graphite) 100%);
   color: var(--text);
   font-family: Inter, "Source Sans 3", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 15px;
@@ -47,11 +48,11 @@ a {
 }
 
 a:hover {
-  color: var(--primary-action);
+  color: var(--highlight);
 }
 
 main {
-  padding: 2rem;
+  padding: 2.25rem;
 }
 
 h1,
@@ -64,6 +65,7 @@ p {
 h1 {
   margin: 0;
   font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 800;
   line-height: 1.05;
   letter-spacing: 0;
 }
@@ -126,8 +128,8 @@ tbody tr:hover {
   gap: 2rem;
   padding: 1.4rem 1rem;
   color: rgba(255, 255, 255, 0.9);
-  background: linear-gradient(180deg, var(--primary-bg), var(--secondary-bg));
-  box-shadow: 12px 0 30px rgba(6, 26, 47, 0.18);
+  background: var(--primary-bg);
+  box-shadow: 12px 0 30px rgba(0, 0, 0, 0.26);
 }
 
 .brand {
@@ -167,6 +169,7 @@ tbody tr:hover {
 }
 
 .sidebar-link {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.7rem;
@@ -182,8 +185,24 @@ tbody tr:hover {
 
 .sidebar-link:hover {
   color: #ffffff;
-  background: rgba(19, 138, 91, 0.24);
+  background: var(--secondary-bg);
   transform: translateX(2px);
+}
+
+.sidebar-link[aria-current="page"] {
+  color: #ffffff;
+  background: rgba(11, 45, 77, 0.88);
+}
+
+.sidebar-link[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: 0.25rem;
+  top: 0.55rem;
+  bottom: 0.55rem;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--highlight);
 }
 
 .nav-icon {
@@ -205,22 +224,51 @@ tbody tr:hover {
 
 .content-shell {
   min-width: 0;
+  background:
+    radial-gradient(circle at top right, rgba(214, 168, 79, 0.15), transparent 24rem),
+    linear-gradient(160deg, var(--primary-bg) 0%, var(--graphite) 100%);
 }
 
 .page {
   display: grid;
-  gap: 1.25rem;
+  gap: 1.4rem;
   max-width: 1280px;
 }
 
 .page-header {
   display: grid;
   gap: 0.6rem;
-  padding: 0.25rem 0 0.5rem;
+  padding: 0.25rem 0 0.85rem;
+}
+
+.page > .page-header {
+  color: #ffffff;
+}
+
+.page > .page-header h1 {
+  position: relative;
+  width: fit-content;
+  padding-bottom: 0.75rem;
+  color: #ffffff;
+}
+
+.page > .page-header h1::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 5.5rem;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--highlight);
+}
+
+.page > .page-header .muted {
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .eyebrow {
-  color: var(--accent-blue);
+  color: var(--highlight);
   font-size: 0.78rem;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -228,11 +276,21 @@ tbody tr:hover {
 }
 
 .card {
+  position: relative;
+  overflow: hidden;
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   padding: 1.25rem;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--highlight);
 }
 
 .card-elevated {
@@ -262,11 +320,42 @@ tbody tr:hover {
 }
 
 .stat-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 0.28rem;
-  background: linear-gradient(90deg, var(--primary-action), var(--highlight));
+  height: 0.32rem;
+}
+
+.stat-gabinetes::before {
+  background: var(--secondary-bg);
+}
+
+.stat-projetos::before {
+  background: var(--primary-action);
+}
+
+.stat-comentarios::before {
+  background: var(--highlight);
+}
+
+.stat-icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 0.85rem;
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--secondary-bg), var(--primary-bg));
+  border-radius: 1rem;
+  box-shadow: 0 12px 28px rgba(6, 26, 47, 0.22);
+}
+
+.stat-projetos .stat-icon {
+  background: linear-gradient(135deg, var(--primary-action), var(--primary-action-dark));
+}
+
+.stat-comentarios .stat-icon {
+  color: var(--primary-bg);
+  background: linear-gradient(135deg, var(--highlight), var(--yellow-highlight));
 }
 
 .stat-value {
@@ -280,7 +369,7 @@ tbody tr:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.6rem;
+  min-height: 2.8rem;
   border: 0;
   border-radius: var(--radius-sm);
   padding: 0.72rem 1rem;
@@ -289,7 +378,7 @@ tbody tr:hover {
   cursor: pointer;
   font: inherit;
   font-weight: 800;
-  box-shadow: 0 8px 18px rgba(19, 138, 91, 0.18);
+  box-shadow: 0 10px 22px rgba(249, 115, 22, 0.24);
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
@@ -300,7 +389,7 @@ tbody tr:hover {
   color: white;
   background: var(--primary-action-dark);
   transform: translateY(-1px);
-  box-shadow: 0 12px 26px rgba(19, 138, 91, 0.24);
+  box-shadow: 0 14px 32px rgba(249, 115, 22, 0.28);
 }
 
 .button:disabled,
@@ -317,7 +406,7 @@ tbody tr:hover {
 }
 
 .button-secondary:hover {
-  background: #083f76;
+  background: #083a6b;
 }
 
 .button-danger {
@@ -334,9 +423,10 @@ tbody tr:hover {
 .textarea {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.78rem 0.9rem;
-  background: #ffffff;
+  border-radius: 12px;
+  min-height: 3rem;
+  padding: 0.85rem 0.95rem;
+  background: var(--card);
   color: var(--text);
   font: inherit;
   outline: none;
@@ -354,8 +444,8 @@ tbody tr:hover {
 .input:focus,
 .select:focus,
 .textarea:focus {
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px rgba(10, 77, 143, 0.14);
+  border-color: var(--primary-action);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
 }
 
 .input::placeholder,
@@ -396,12 +486,33 @@ tbody tr:hover {
 }
 
 .list-card {
+  position: relative;
+  overflow: hidden;
   display: grid;
   gap: 0.7rem;
   padding: 1rem;
-  background: #ffffff;
+  background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.list-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: var(--highlight);
+}
+
+.list-card:hover {
+  border-color: rgba(214, 168, 79, 0.62);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
 }
 
 .badge {
@@ -417,30 +528,30 @@ tbody tr:hover {
 }
 
 .badge-draft {
-  color: #475569;
-  background: #e5e7eb;
+  color: #ffffff;
+  background: var(--graphite-light);
 }
 
 .badge-minuta-generated,
 .badge-analysis-generated {
-  color: #0a4d8f;
-  background: #dbeafe;
+  color: #ffffff;
+  background: var(--accent-blue);
 }
 
 .badge-minuta-approved,
 .badge-minuta-validada {
-  color: #0f6f49;
-  background: #dcfce7;
+  color: #ffffff;
+  background: var(--primary-action);
 }
 
 .badge-justificativa-generated {
-  color: #8a5d10;
-  background: #f8e7ba;
+  color: var(--primary-bg);
+  background: var(--highlight);
 }
 
 .badge-docx-exported {
-  color: #ffffff;
-  background: #0f6f49;
+  color: var(--primary-bg);
+  background: var(--yellow-highlight);
 }
 
 .workflow {
@@ -455,6 +566,7 @@ tbody tr:hover {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: #ffffff;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
 }
 
 .workflow-step strong {
@@ -468,8 +580,8 @@ tbody tr:hover {
 }
 
 .workflow-step.is-active {
-  border-color: var(--highlight);
-  box-shadow: 0 0 0 3px rgba(214, 168, 79, 0.18);
+  border-color: var(--primary-action);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
 }
 
 .notice {
@@ -479,7 +591,7 @@ tbody tr:hover {
 }
 
 .notice-success {
-  color: #0f6f49;
+  color: var(--success);
   background: #ecfdf3;
   border-color: #bbf7d0;
 }
@@ -502,7 +614,7 @@ tbody tr:hover {
   place-items: center;
   padding: 2rem;
   background:
-    linear-gradient(135deg, rgba(6, 26, 47, 0.94), rgba(11, 45, 77, 0.94)),
+    linear-gradient(135deg, rgba(6, 26, 47, 0.96), rgba(31, 41, 55, 0.96)),
     var(--primary-bg);
 }
 
@@ -511,7 +623,7 @@ tbody tr:hover {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
   overflow: hidden;
-  background: #ffffff;
+  background: var(--surface);
   border-radius: 1.25rem;
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.26);
 }
@@ -525,11 +637,12 @@ tbody tr:hover {
   color: #ffffff;
   background:
     linear-gradient(180deg, rgba(6, 26, 47, 0.18), rgba(6, 26, 47, 0.92)),
-    linear-gradient(135deg, var(--accent-blue), var(--primary-bg));
+    linear-gradient(135deg, var(--primary-bg), var(--graphite));
 }
 
 .login-hero h1 {
-  max-width: 11ch;
+  max-width: 13ch;
+  font-size: clamp(2.25rem, 4.5vw, 4rem);
 }
 
 .login-form-card {

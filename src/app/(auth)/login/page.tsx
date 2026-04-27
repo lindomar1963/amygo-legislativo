@@ -9,10 +9,9 @@ export default function LoginPage() {
           <p className="eyebrow" style={{ color: '#d6a84f' }}>
             Govtech legislativa
           </p>
-          <h1>Amygo Legislativo</h1>
+          <h1>Legislação inteligente para decisões institucionais seguras</h1>
           <p style={{ maxWidth: 520, color: 'rgba(255,255,255,0.78)' }}>
-            Plataforma institucional para pesquisa normativa, elaboração legislativa, validação técnica e gestão do
-            fluxo de projetos.
+            Minutas, justificativas e análises legislativas com velocidade e controle técnico.
           </p>
         </section>
         <section className="login-form-card">
