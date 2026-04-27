@@ -27,6 +27,11 @@ export type GenerateJustificativaState = {
   error?: string;
 };
 
+export type RegisterDocxExportState = {
+  success?: string;
+  error?: string;
+};
+
 type ProjetoAnalise = {
   id: string;
   titulo: string;
@@ -59,11 +64,21 @@ type NormaAnalise = {
 type WorkflowStatus = Database['public']['Tables']['projetos_legislativos']['Row']['workflow_status'];
 type AdminClient = ReturnType<typeof createAdminClient>;
 
-async function logWorkflowStatusChange({
+type GenerationOperation = 'generate_minuta' | 'approve_minuta' | 'generate_justificativa' | 'export_docx';
+type GenerationStatus = 'success' | 'failed';
+
+function elapsedMs(startedAt: number) {
+  return Date.now() - startedAt;
+}
+
+async function logGenerationEvent({
   admin,
   projetoId,
   userId,
-  stage,
+  operation,
+  status,
+  executionTime,
+  modelUsed,
   fromStatus,
   toStatus,
   message
@@ -71,23 +86,34 @@ async function logWorkflowStatusChange({
   admin: AdminClient;
   projetoId: string;
   userId: string;
-  stage: string;
+  operation: GenerationOperation;
+  status: GenerationStatus;
+  executionTime: number;
+  modelUsed?: string | null;
   fromStatus: WorkflowStatus;
   toStatus: WorkflowStatus;
   message: string;
 }) {
   const { error } = await admin.from('generation_logs').insert({
     project_id: projetoId,
-    stage,
+    stage: operation,
     request_payload: {
+      operation,
+      status,
+      project_id: projetoId,
       actor_user_id: userId,
       workflow_status_from: fromStatus,
       workflow_status_to: toStatus
     },
     response_payload: {
+      operation,
+      status,
+      execution_time: executionTime,
+      model_used: modelUsed ?? null,
+      project_id: projetoId,
       message
     },
-    success: true
+    success: status === 'success'
   });
 
   if (error) {
@@ -293,6 +319,7 @@ export async function generateAnaliseComparativa(
   _prevState: GenerateAnaliseComparativaState | null,
   formData: FormData
 ): Promise<GenerateAnaliseComparativaState> {
+  const startedAt = Date.now();
   const projetoId = String(formData.get('projeto_id') ?? '');
 
   if (!projetoId) {
@@ -404,11 +431,14 @@ export async function generateAnaliseComparativa(
     };
   }
 
-  const logError = await logWorkflowStatusChange({
+  const logError = await logGenerationEvent({
     admin,
     projetoId,
     userId: user.id,
-    stage: 'minuta_generated',
+    operation: 'generate_minuta',
+    status: 'success',
+    executionTime: elapsedMs(startedAt),
+    modelUsed: 'template-local',
     fromStatus: projeto.data.workflow_status,
     toStatus: nextWorkflowStatus,
     message: `Analise comparativa e minuta geradas como versao ${nextVersion}.`
@@ -427,6 +457,7 @@ export async function approveMinuta(
   _prevState: ApproveMinutaState | null,
   formData: FormData
 ): Promise<ApproveMinutaState> {
+  const startedAt = Date.now();
   const projetoId = String(formData.get('projeto_id') ?? '');
 
   if (!projetoId) {
@@ -487,11 +518,14 @@ export async function approveMinuta(
     return { error: `Nao foi possivel aprovar a minuta: ${error.message}` };
   }
 
-  const logError = await logWorkflowStatusChange({
+  const logError = await logGenerationEvent({
     admin,
     projetoId,
     userId: user.id,
-    stage: 'minuta_approved',
+    operation: 'approve_minuta',
+    status: 'success',
+    executionTime: elapsedMs(startedAt),
+    modelUsed: null,
     fromStatus: projeto.data.workflow_status,
     toStatus: nextWorkflowStatus,
     message: 'Minuta aprovada por acao humana.'
@@ -510,6 +544,7 @@ export async function generateJustificativa(
   _prevState: GenerateJustificativaState | null,
   formData: FormData
 ): Promise<GenerateJustificativaState> {
+  const startedAt = Date.now();
   const projetoId = String(formData.get('projeto_id') ?? '');
 
   if (!projetoId) {
@@ -605,11 +640,14 @@ export async function generateJustificativa(
     };
   }
 
-  const logError = await logWorkflowStatusChange({
+  const logError = await logGenerationEvent({
     admin,
     projetoId,
     userId: user.id,
-    stage: 'justificativa_generated',
+    operation: 'generate_justificativa',
+    status: 'success',
+    executionTime: elapsedMs(startedAt),
+    modelUsed: 'template-local',
     fromStatus: projeto.data.workflow_status,
     toStatus: nextWorkflowStatus,
     message: `Justificativa gerada como versao ${nextVersion}.`
@@ -622,4 +660,81 @@ export async function generateJustificativa(
   revalidatePath(`/projetos-legislativos/${projetoId}`);
 
   return { success: `Justificativa gerada como versao ${nextVersion}.` };
+}
+
+export async function registerDocxExport(
+  _prevState: RegisterDocxExportState | null,
+  formData: FormData
+): Promise<RegisterDocxExportState> {
+  const startedAt = Date.now();
+  const projetoId = String(formData.get('projeto_id') ?? '');
+
+  if (!projetoId) {
+    return { error: 'Projeto obrigatorio para registrar exportacao DOCX.' };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return { error: 'Sessao expirada. Entre novamente para registrar exportacao DOCX.' };
+  }
+
+  const projeto = await supabase
+    .from('projetos_legislativos')
+    .select('id, workflow_status')
+    .eq('id', projetoId)
+    .single();
+
+  if (projeto.error || !projeto.data) {
+    return { error: 'Projeto nao encontrado ou nao vinculado ao seu usuario.' };
+  }
+
+  let admin;
+  try {
+    admin = createAdminClient();
+    await ensureUserProfile(admin, user);
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : 'Nao foi possivel preparar o registro da exportacao DOCX.'
+    };
+  }
+
+  const nextWorkflowStatus: WorkflowStatus = 'docx_exported';
+  const { error: workflowError } = await admin
+    .from('projetos_legislativos')
+    .update({
+      workflow_status: nextWorkflowStatus
+    })
+    .eq('id', projetoId);
+
+  if (workflowError) {
+    return {
+      error: `DOCX exportado, mas nao foi possivel atualizar o status do fluxo: ${workflowError.message}`
+    };
+  }
+
+  const logError = await logGenerationEvent({
+    admin,
+    projetoId,
+    userId: user.id,
+    operation: 'export_docx',
+    status: 'success',
+    executionTime: elapsedMs(startedAt),
+    modelUsed: null,
+    fromStatus: projeto.data.workflow_status,
+    toStatus: nextWorkflowStatus,
+    message: 'Exportacao DOCX registrada no pipeline oficial.'
+  });
+
+  if (logError) {
+    return { error: logError };
+  }
+
+  revalidatePath(`/projetos-legislativos/${projetoId}`);
+
+  return { success: 'Exportacao DOCX registrada no generation_logs.' };
 }
