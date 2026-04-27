@@ -50,7 +50,7 @@ export function GabineteForm() {
           required
           aria-invalid={Boolean(state.fieldErrors?.nome)}
         />
-        {state.fieldErrors?.nome ? <p style={{ color: '#b91c1c' }}>{state.fieldErrors.nome[0]}</p> : null}
+        {state.fieldErrors?.nome ? <p className="field-error">{state.fieldErrors.nome[0]}</p> : null}
       </div>
 
       <div>
@@ -65,7 +65,7 @@ export function GabineteForm() {
           <option value="estadual">Estadual</option>
           <option value="federal">Federal</option>
         </select>
-        {state.fieldErrors?.esfera ? <p style={{ color: '#b91c1c' }}>{state.fieldErrors.esfera[0]}</p> : null}
+        {state.fieldErrors?.esfera ? <p className="field-error">{state.fieldErrors.esfera[0]}</p> : null}
       </div>
 
       <div>
@@ -77,7 +77,7 @@ export function GabineteForm() {
           aria-invalid={Boolean(state.fieldErrors?.orgao_casa_legislativa)}
         />
         {state.fieldErrors?.orgao_casa_legislativa ? (
-          <p style={{ color: '#b91c1c' }}>{state.fieldErrors.orgao_casa_legislativa[0]}</p>
+          <p className="field-error">{state.fieldErrors.orgao_casa_legislativa[0]}</p>
         ) : null}
       </div>
 

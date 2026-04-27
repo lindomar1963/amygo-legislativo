@@ -6,11 +6,11 @@ export default function LoginPage() {
       <div className="login-panel">
         <section className="login-hero">
           <div className="brand-mark">AL</div>
-          <p className="eyebrow" style={{ color: '#c9a646' }}>
+          <p className="eyebrow" style={{ color: 'var(--gold)' }}>
             Govtech legislativa
           </p>
           <h1>Legislação inteligente para decisões institucionais seguras</h1>
-          <p style={{ maxWidth: 520, color: 'rgba(255,255,255,0.78)' }}>
+          <p style={{ maxWidth: 520, color: 'rgba(240,248,255,0.78)' }}>
             Minutas, justificativas e análises legislativas com velocidade e controle técnico.
           </p>
         </section>

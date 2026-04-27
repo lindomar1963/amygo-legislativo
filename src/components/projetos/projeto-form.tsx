@@ -62,7 +62,7 @@ export function ProjetoForm({ gabinetes }: { gabinetes: Gabinete[] }) {
             </option>
           ))}
         </select>
-        {state.fieldErrors?.gabinete_id ? <p style={{ color: '#b91c1c' }}>{state.fieldErrors.gabinete_id[0]}</p> : null}
+        {state.fieldErrors?.gabinete_id ? <p className="field-error">{state.fieldErrors.gabinete_id[0]}</p> : null}
       </div>
 
       <div>
@@ -73,7 +73,7 @@ export function ProjetoForm({ gabinetes }: { gabinetes: Gabinete[] }) {
           required
           aria-invalid={Boolean(state.fieldErrors?.titulo)}
         />
-        {state.fieldErrors?.titulo ? <p style={{ color: '#b91c1c' }}>{state.fieldErrors.titulo[0]}</p> : null}
+        {state.fieldErrors?.titulo ? <p className="field-error">{state.fieldErrors.titulo[0]}</p> : null}
       </div>
 
       <div>
@@ -90,7 +90,7 @@ export function ProjetoForm({ gabinetes }: { gabinetes: Gabinete[] }) {
             </option>
           ))}
         </select>
-        {state.fieldErrors?.tipo ? <p style={{ color: '#b91c1c' }}>{state.fieldErrors.tipo[0]}</p> : null}
+        {state.fieldErrors?.tipo ? <p className="field-error">{state.fieldErrors.tipo[0]}</p> : null}
       </div>
 
       <div>
@@ -101,13 +101,13 @@ export function ProjetoForm({ gabinetes }: { gabinetes: Gabinete[] }) {
           rows={4}
           aria-invalid={Boolean(state.fieldErrors?.ementa)}
         />
-        {state.fieldErrors?.ementa ? <p style={{ color: '#b91c1c' }}>{state.fieldErrors.ementa[0]}</p> : null}
+        {state.fieldErrors?.ementa ? <p className="field-error">{state.fieldErrors.ementa[0]}</p> : null}
       </div>
 
       {!hasGabinetes ? <p className="muted">Cadastre um gabinete antes de criar projetos legislativos.</p> : null}
 
       <div aria-live="polite" role="status">
-        {state.error ? <p style={{ color: '#b91c1c' }}>{state.error}</p> : null}
+        {state.error ? <p className="notice notice-danger">{state.error}</p> : null}
         {state.success ? (
           <div className="notice notice-success">
             <p style={{ marginTop: 0 }}>{state.success}</p>

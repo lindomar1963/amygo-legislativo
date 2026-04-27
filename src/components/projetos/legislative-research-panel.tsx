@@ -90,7 +90,7 @@ export function LegislativeResearchPanel({ projeto, gabinete }: { projeto: Proje
         ))}
       </div>
 
-      <div className="notice" style={{ background: '#f8fafc' }}>
+      <div className="notice">
         <strong>Checklist de adaptação</strong>
         <ul style={{ marginBottom: 0 }}>
           <li>Confirmar se a matéria é de competência estadual, municipal ou federal.</li>
