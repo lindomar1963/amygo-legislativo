@@ -107,6 +107,14 @@ export type Database = {
           titulo: string;
           ementa: string | null;
           status_fluxo: 'rascunho' | 'em_revisao' | 'aprovado_interno' | 'protocolado';
+          workflow_status:
+            | 'draft'
+            | 'analysis_generated'
+            | 'minuta_generated'
+            | 'minuta_approved'
+            | 'justificativa_generated'
+            | 'docx_exported';
+          approved_minuta: boolean;
           tipo: 'PL' | 'PEC' | 'requerimento' | 'indicacao' | 'outro';
           autor_responsavel_id: string;
           created_at: string;
@@ -117,6 +125,14 @@ export type Database = {
           titulo: string;
           ementa?: string | null;
           status_fluxo?: 'rascunho' | 'em_revisao' | 'aprovado_interno' | 'protocolado';
+          workflow_status?:
+            | 'draft'
+            | 'analysis_generated'
+            | 'minuta_generated'
+            | 'minuta_approved'
+            | 'justificativa_generated'
+            | 'docx_exported';
+          approved_minuta?: boolean;
           tipo?: 'PL' | 'PEC' | 'requerimento' | 'indicacao' | 'outro';
           autor_responsavel_id: string;
         }

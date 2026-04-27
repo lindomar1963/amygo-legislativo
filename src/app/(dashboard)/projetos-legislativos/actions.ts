@@ -86,6 +86,8 @@ export async function createProjeto(
     tipo: parsed.data.tipo,
     ementa: parsed.data.ementa || null,
     status_fluxo: 'rascunho',
+    workflow_status: 'draft',
+    approved_minuta: false,
     autor_responsavel_id: user.id
   };
 

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { TechnicalComments } from '@/components/comentarios/technical-comments';
 import { ComparativeAnalysisPanel } from '@/components/projetos/comparative-analysis-panel';
 import { LegislativeResearchPanel } from '@/components/projetos/legislative-research-panel';
+import { MinutaApprovalPanel } from '@/components/projetos/minuta-approval-panel';
 import { NormasBibliotecaPanel } from '@/components/projetos/normas-biblioteca-panel';
 import { VersionHistory } from '@/components/versionamento/version-history';
 import { getProjetoDetalhe } from '@/lib/data/projetos';
@@ -21,8 +22,9 @@ export default async function ProjetoDetalhePage({ params }: Params) {
         <section className="card">
           <h1>{projeto.titulo}</h1>
           <p className="muted">
-            {projeto.tipo} • {projeto.status_fluxo}
+            {projeto.tipo} - {projeto.workflow_status}
           </p>
+          <p className="muted">Minuta aprovada: {projeto.approved_minuta ? 'sim' : 'nao'}</p>
           <p>{projeto.ementa ?? 'Sem ementa cadastrada.'}</p>
         </section>
 
@@ -34,6 +36,12 @@ export default async function ProjetoDetalhePage({ params }: Params) {
           setupError={referenciasSetupError}
         />
         <ComparativeAnalysisPanel projetoId={projeto.id} hasReferencias={referencias.length > 0} />
+        <MinutaApprovalPanel
+          projetoId={projeto.id}
+          approvedMinuta={projeto.approved_minuta}
+          workflowStatus={projeto.workflow_status}
+          hasVersoes={versoes.length > 0}
+        />
         <VersionHistory versoes={versoes} />
         <TechnicalComments comentarios={comentarios} />
       </main>

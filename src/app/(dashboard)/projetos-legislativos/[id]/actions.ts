@@ -16,6 +16,11 @@ export type GenerateAnaliseComparativaState = {
   error?: string;
 };
 
+export type ApproveMinutaState = {
+  success?: string;
+  error?: string;
+};
+
 type ProjetoAnalise = {
   id: string;
   titulo: string;
@@ -123,7 +128,7 @@ PROJETO DE LEI
 
 Ementa: ${projeto.ementa ?? 'Dispoe sobre materia a ser detalhada conforme a finalidade do projeto.'}
 
-Art. 1o Fica instituida, no ambito de ${gabinete?.orgao_casa_legislativa ?? 'ente competente'}, a disciplina relacionada ao tema objeto deste projeto, conforme os objetivos descritos na justificativa.
+Art. 1o Fica instituida, no ambito de ${gabinete?.orgao_casa_legislativa ?? 'ente competente'}, a disciplina relacionada ao tema objeto deste projeto, conforme a finalidade indicada na ementa.
 
 Art. 2o Para os fins desta Lei, deverao ser observados os principios da legalidade, eficiencia, transparencia, interesse publico e adequacao a realidade local.
 
@@ -133,13 +138,9 @@ Art. 4o As despesas decorrentes da execucao desta Lei, quando houver, correrao p
 
 Art. 5o Esta Lei entra em vigor na data de sua publicacao.
 
-JUSTIFICATIVA PRELIMINAR
-
-A presente proposta busca adaptar referencia legislativa ja existente ao contexto de ${gabinete?.orgao_casa_legislativa ?? 'seu gabinete'}, com o objetivo de oferecer tratamento normativo adequado ao tema indicado no projeto. A analise comparativa devera ser aprofundada pela equipe tecnica, especialmente quanto a competencia legislativa, compatibilidade com normas locais e adequacao redacional.
-
 OBSERVACAO
 
-Este texto e uma primeira versao de trabalho. Ele nao substitui a revisao juridica, tecnica e politica antes do protocolo.`;
+Este texto e uma primeira versao de trabalho. A justificativa deve ser gerada somente depois da aprovacao humana da minuta.`;
 }
 
 export async function addProjetoNormaReferencia(
@@ -303,7 +304,90 @@ export async function generateAnaliseComparativa(
     return { error: `Nao foi possivel salvar a analise comparativa: ${error.message}` };
   }
 
+  const { error: workflowError } = await admin
+    .from('projetos_legislativos')
+    .update({
+      workflow_status: 'minuta_generated',
+      status_fluxo: 'em_revisao',
+      approved_minuta: false
+    })
+    .eq('id', projetoId);
+
+  if (workflowError) {
+    return {
+      error: `Minuta salva, mas nao foi possivel atualizar o status do fluxo: ${workflowError.message}`
+    };
+  }
+
   revalidatePath(`/projetos-legislativos/${projetoId}`);
 
   return { success: `Analise comparativa gerada como versao ${nextVersion}.` };
+}
+
+export async function approveMinuta(
+  _prevState: ApproveMinutaState | null,
+  formData: FormData
+): Promise<ApproveMinutaState> {
+  const projetoId = String(formData.get('projeto_id') ?? '');
+
+  if (!projetoId) {
+    return { error: 'Projeto obrigatorio para aprovar a minuta.' };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return { error: 'Sessao expirada. Entre novamente para aprovar a minuta.' };
+  }
+
+  const projeto = await supabase
+    .from('projetos_legislativos')
+    .select('id')
+    .eq('id', projetoId)
+    .single();
+
+  if (projeto.error || !projeto.data) {
+    return { error: 'Projeto nao encontrado ou nao vinculado ao seu usuario.' };
+  }
+
+  const versoes = await supabase
+    .from('projeto_versoes')
+    .select('id')
+    .eq('projeto_id', projetoId)
+    .limit(1);
+
+  if (versoes.error || !versoes.data?.length) {
+    return { error: 'Gere uma minuta antes de aprovar.' };
+  }
+
+  let admin;
+  try {
+    admin = createAdminClient();
+    await ensureUserProfile(admin, user);
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : 'Nao foi possivel preparar a aprovacao da minuta.'
+    };
+  }
+
+  const { error } = await admin
+    .from('projetos_legislativos')
+    .update({
+      approved_minuta: true,
+      workflow_status: 'minuta_approved',
+      status_fluxo: 'aprovado_interno'
+    })
+    .eq('id', projetoId);
+
+  if (error) {
+    return { error: `Nao foi possivel aprovar a minuta: ${error.message}` };
+  }
+
+  revalidatePath(`/projetos-legislativos/${projetoId}`);
+
+  return { success: 'Minuta aprovada. A justificativa podera ser gerada na proxima etapa.' };
 }

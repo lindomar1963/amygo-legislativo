@@ -69,6 +69,45 @@ function scoreNorma(norma: BibliotecaNorma, terms: string[]) {
   }, 0);
 }
 
+async function getProjetoWithWorkflow(id: string) {
+  const supabase = await createClient();
+
+  const projeto = await supabase
+    .from('projetos_legislativos')
+    .select(
+      'id, titulo, ementa, status_fluxo, workflow_status, approved_minuta, tipo, gabinete_id, created_at, updated_at'
+    )
+    .eq('id', id)
+    .single();
+
+  if (!projeto.error) {
+    return projeto;
+  }
+
+  const message = projeto.error.message.toLowerCase();
+
+  if (!message.includes('workflow_status') && !message.includes('approved_minuta')) {
+    return projeto;
+  }
+
+  const fallback = await supabase
+    .from('projetos_legislativos')
+    .select('id, titulo, ementa, status_fluxo, tipo, gabinete_id, created_at, updated_at')
+    .eq('id', id)
+    .single();
+
+  return {
+    data: fallback.data
+      ? {
+          ...fallback.data,
+          workflow_status: 'draft' as const,
+          approved_minuta: false
+        }
+      : null,
+    error: fallback.error
+  };
+}
+
 export async function getProjetos() {
   const supabase = await createClient();
 
@@ -88,11 +127,7 @@ export async function getProjetoDetalhe(id: string) {
   const supabase = await createClient();
 
   const [projeto, versoes, comentarios] = await Promise.all([
-    supabase
-      .from('projetos_legislativos')
-      .select('id, titulo, ementa, status_fluxo, tipo, gabinete_id, created_at, updated_at')
-      .eq('id', id)
-      .single(),
+    getProjetoWithWorkflow(id),
     supabase
       .from('projeto_versoes')
       .select('id, numero_versao, resumo_alteracoes, origem, created_at, criado_por')
@@ -105,14 +140,16 @@ export async function getProjetoDetalhe(id: string) {
       .order('created_at', { ascending: false })
   ]);
 
-  if (projeto.error) {
-    throw new Error(`Erro ao carregar projeto: ${projeto.error.message}`);
+  const projetoData = projeto.data;
+
+  if (projeto.error || !projetoData) {
+    throw new Error(`Erro ao carregar projeto: ${projeto.error?.message ?? 'projeto nao encontrado'}`);
   }
 
   const gabinete = await supabase
     .from('gabinetes')
     .select('id, nome, esfera, orgao_casa_legislativa')
-    .eq('id', projeto.data.gabinete_id)
+    .eq('id', projetoData.gabinete_id)
     .single();
 
   const [normas, referencias] = await Promise.all([
@@ -126,7 +163,7 @@ export async function getProjetoDetalhe(id: string) {
       .eq('projeto_id', id)
   ]);
 
-  const terms = extractTerms(projeto.data);
+  const terms = extractTerms(projetoData);
   const normasRelacionadas = (normas.data ?? [])
     .map((norma) => ({ ...norma, score: scoreNorma(norma, terms) }))
     .filter((norma) => norma.score > 0)
@@ -134,7 +171,7 @@ export async function getProjetoDetalhe(id: string) {
     .slice(0, 6);
 
   return {
-    projeto: projeto.data,
+    projeto: projetoData,
     gabinete: gabinete.data,
     normasRelacionadas,
     referencias: referencias.error ? [] : referencias.data ?? [],
