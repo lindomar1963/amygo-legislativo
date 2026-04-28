@@ -1,10 +1,21 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 type ParagraphOptions = {
   align?: 'both' | 'center' | 'right';
   bold?: boolean;
   italic?: boolean;
   uppercase?: boolean;
   spacingAfter?: number;
+  border?: boolean;
 };
+
+const FORBIDDEN_EXPRESSIONS: Array<[RegExp, string]> = [
+  [/aprova[cç][aã]o humana/gi, 'validação técnica da minuta'],
+  [/gerado por ia/gi, 'versão consolidada'],
+  [/gera[cç][aã]o por ia/gi, 'elaboração da justificativa'],
+  [/primeira vers[aã]o de trabalho/gi, 'versão consolidada']
+];
 
 function escapeXml(value: string) {
   return value
@@ -15,21 +26,37 @@ function escapeXml(value: string) {
     .replace(/'/g, '&apos;');
 }
 
+export function normalizeLegislativeText(value: string) {
+  const normalized = value
+    .normalize('NFC')
+    .replace(/\bArt\. (\d+)o\b/g, 'Art. $1º')
+    .replace(/\bArtigo (\d+)o\b/gi, 'Art. $1º')
+    .replace(/N[\u00c2º°]?\s*o\b/g, 'Nº')
+    .replace(/N\s*º/g, 'Nº');
+
+  return FORBIDDEN_EXPRESSIONS.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), normalized);
+}
+
 function runProperties({ bold, italic }: Pick<ParagraphOptions, 'bold' | 'italic'>) {
-  return `<w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/>${
+  return `<w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="24"/><w:szCs w:val="24"/>${
     bold ? '<w:b/>' : ''
   }${italic ? '<w:i/>' : ''}</w:rPr>`;
 }
 
 function paragraph(value: string, options: ParagraphOptions = {}) {
-  const text = options.uppercase ? value.toUpperCase() : value;
+  const normalizedValue = normalizeLegislativeText(value);
+  const text = options.uppercase ? normalizedValue.toUpperCase() : normalizedValue;
   const align = options.align ?? 'both';
   const spacingAfter = options.spacingAfter ?? 160;
+  const border = options.border
+    ? '<w:pBdr><w:top w:val="single" w:sz="8" w:space="6" w:color="808080"/><w:bottom w:val="single" w:sz="8" w:space="6" w:color="808080"/></w:pBdr>'
+    : '';
 
   return `<w:p>
     <w:pPr>
       <w:jc w:val="${align}"/>
       <w:spacing w:after="${spacingAfter}" w:line="360" w:lineRule="auto"/>
+      ${border}
     </w:pPr>
     <w:r>${runProperties(options)}<w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r>
   </w:p>`;
@@ -41,6 +68,13 @@ function blankParagraph() {
 
 function sectionTitle(value: string) {
   return paragraph(value, { align: 'center', bold: true, uppercase: true, spacingAfter: 240 });
+}
+
+function ementaBlock(value: string) {
+  return [
+    paragraph('EMENTA', { align: 'right', bold: true, spacingAfter: 80 }),
+    paragraph(value, { align: 'both', italic: true, spacingAfter: 320, border: true })
+  ].join('');
 }
 
 function crc32(buffer: Buffer) {
@@ -81,7 +115,7 @@ function zip(entries: { name: string; content: string }[]) {
     const localHeader = Buffer.alloc(30);
     localHeader.writeUInt32LE(0x04034b50, 0);
     localHeader.writeUInt16LE(20, 4);
-    localHeader.writeUInt16LE(0, 6);
+    localHeader.writeUInt16LE(0x0800, 6);
     localHeader.writeUInt16LE(0, 8);
     localHeader.writeUInt16LE(time, 10);
     localHeader.writeUInt16LE(dosDate, 12);
@@ -97,7 +131,7 @@ function zip(entries: { name: string; content: string }[]) {
     centralHeader.writeUInt32LE(0x02014b50, 0);
     centralHeader.writeUInt16LE(20, 4);
     centralHeader.writeUInt16LE(20, 6);
-    centralHeader.writeUInt16LE(0, 8);
+    centralHeader.writeUInt16LE(0x0800, 8);
     centralHeader.writeUInt16LE(0, 10);
     centralHeader.writeUInt16LE(time, 12);
     centralHeader.writeUInt16LE(dosDate, 14);
@@ -130,6 +164,39 @@ function zip(entries: { name: string; content: string }[]) {
   return Buffer.concat([...localParts, centralDirectory, endRecord]);
 }
 
+function readStoredZipEntries(buffer: Buffer) {
+  const result = new Map<string, string>();
+  let offset = 0;
+
+  while (offset < buffer.length && buffer.readUInt32LE(offset) === 0x04034b50) {
+    const method = buffer.readUInt16LE(offset + 8);
+    const compressedSize = buffer.readUInt32LE(offset + 18);
+    const nameLength = buffer.readUInt16LE(offset + 26);
+    const extraLength = buffer.readUInt16LE(offset + 28);
+    const name = buffer.slice(offset + 30, offset + 30 + nameLength).toString('utf8');
+    const contentStart = offset + 30 + nameLength + extraLength;
+    const content = buffer.slice(contentStart, contentStart + compressedSize);
+
+    if (method === 0) {
+      result.set(name, content.toString('utf8'));
+    }
+
+    offset = contentStart + compressedSize;
+  }
+
+  return result;
+}
+
+function readInstitutionalTemplate() {
+  const templatePath = join(process.cwd(), 'templates', 'template_pl_ordinaria_base.docx');
+
+  if (!existsSync(templatePath)) {
+    return null;
+  }
+
+  return readStoredZipEntries(readFileSync(templatePath));
+}
+
 function documentParagraphs(lines: string[]) {
   return lines.map((line) => (line.trim() ? paragraph(line.trim()) : blankParagraph())).join('');
 }
@@ -157,15 +224,16 @@ export function createSimpleDocx({
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:body>
     ${paragraph('PROJETO DE LEI Nº ____ / ______', { align: 'center', bold: true, uppercase: true, spacingAfter: 240 })}
-    ${paragraph(ementa ?? titulo, { align: 'both', italic: true, spacingAfter: 320 })}
+    ${ementaBlock(ementa ?? titulo)}
     ${paragraph(`${casaLegislativa.toUpperCase()} DECRETA:`, { align: 'center', bold: true, spacingAfter: 320 })}
     ${documentParagraphs(minuta.split(/\r?\n/))}
+    ${blankParagraph()}
+    ${sectionTitle('Justificativa')}
+    ${documentParagraphs(justificativa.split(/\r?\n/))}
     ${blankParagraph()}
     ${paragraph(`${casaLegislativa.toUpperCase()}, em ${localData}.`, { align: 'center', spacingAfter: 560 })}
     ${paragraph(autor, { align: 'center', bold: true, uppercase: true, spacingAfter: 80 })}
     ${paragraph(cargoAutor, { align: 'center', spacingAfter: 480 })}
-    ${sectionTitle('Justificativa')}
-    ${documentParagraphs(justificativa.split(/\r?\n/))}
     <w:sectPr>
       <w:pgSz w:w="11906" w:h="16838"/>
       <w:pgMar w:top="1701" w:right="1134" w:bottom="1134" w:left="1701" w:header="708" w:footer="708" w:gutter="0"/>
@@ -177,18 +245,21 @@ export function createSimpleDocx({
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:docDefaults>
     <w:rPrDefault>
-      <w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>
+      <w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>
     </w:rPrDefault>
     <w:pPrDefault>
       <w:pPr><w:jc w:val="both"/><w:spacing w:line="360" w:lineRule="auto"/></w:pPr>
     </w:pPrDefault>
   </w:docDefaults>
 </w:styles>`;
+  const template = readInstitutionalTemplate();
 
   return zip([
     {
       name: '[Content_Types].xml',
-      content: `<?xml version="1.0" encoding="UTF-8"?>
+      content:
+        template?.get('[Content_Types].xml') ??
+        `<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
@@ -198,19 +269,23 @@ export function createSimpleDocx({
     },
     {
       name: '_rels/.rels',
-      content: `<?xml version="1.0" encoding="UTF-8"?>
+      content:
+        template?.get('_rels/.rels') ??
+        `<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
 </Relationships>`
     },
     {
       name: 'word/_rels/document.xml.rels',
-      content: `<?xml version="1.0" encoding="UTF-8"?>
+      content:
+        template?.get('word/_rels/document.xml.rels') ??
+        `<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
 </Relationships>`
     },
     { name: 'word/document.xml', content: documentXml },
-    { name: 'word/styles.xml', content: stylesXml }
+    { name: 'word/styles.xml', content: template?.get('word/styles.xml') ?? stylesXml }
   ]);
 }

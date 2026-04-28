@@ -1,4 +1,4 @@
-import { createSimpleDocx } from '@/lib/docx/simple-docx';
+import { createSimpleDocx, normalizeLegislativeText } from '@/lib/docx/simple-docx';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { ensureUserProfile } from '@/lib/users/ensure-user-profile';
@@ -14,15 +14,12 @@ type WorkflowStatus = Database['public']['Tables']['projetos_legislativos']['Row
 
 function sanitizeFilename(value: string) {
   return value
+    .normalize('NFC')
     .replace(/[\\/:*?"<>|]+/g, '-')
     .replace(/[^\p{L}\p{N}._-]+/gu, '-')
     .replace(/^-+|-+$/g, '')
     .toLowerCase()
     .slice(0, 80);
-}
-
-function normalizeLegislativeOrdinals(value: string) {
-  return value.replace(/\bArt\. (\d+)o\b/g, 'Art. $1º');
 }
 
 function extractMinuta(content: string) {
@@ -97,12 +94,14 @@ export async function GET(_request: Request, { params }: RouteContext) {
 
   const latestVersionNumber = (versoes.data ?? [])[0]?.numero_versao ?? 0;
   const nextVersion = latestVersionNumber + 1;
-  const minutaText = normalizeLegislativeOrdinals(extractMinuta(minuta.conteudo_texto));
-  const justificativaText = normalizeLegislativeOrdinals(
+  const minutaText = normalizeLegislativeText(extractMinuta(minuta.conteudo_texto));
+  const justificativaText = normalizeLegislativeText(
     justificativa.conteudo_texto.replace(/^JUSTIFICATIVA\s*/i, '').trim()
   );
-  const casaLegislativa = gabinete.data?.orgao_casa_legislativa ?? 'Casa Legislativa';
-  const autor = gabinete.data?.nome ?? user.email ?? 'Autor';
+  const titulo = normalizeLegislativeText(projeto.data.titulo);
+  const ementa = normalizeLegislativeText(projeto.data.ementa ?? 'Sem ementa cadastrada.');
+  const casaLegislativa = normalizeLegislativeText(gabinete.data?.orgao_casa_legislativa ?? 'Casa Legislativa');
+  const autor = normalizeLegislativeText(gabinete.data?.nome ?? user.email ?? 'Autor');
   const cargoAutor =
     gabinete.data?.esfera === 'estadual'
       ? 'Deputado Estadual'
@@ -118,10 +117,10 @@ export async function GET(_request: Request, { params }: RouteContext) {
   const exportText = [
     'PROJETO DE LEI Nº ____ / ______',
     '',
-    projeto.data.titulo,
+    titulo,
     '',
     'EMENTA',
-    projeto.data.ementa ?? 'Sem ementa cadastrada.',
+    ementa,
     '',
     'ARTICULADO DA MINUTA',
     minutaText,
@@ -139,7 +138,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     projeto_id: id,
     numero_versao: nextVersion,
     conteudo_texto: exportText,
-    resumo_alteracoes: 'Versão exportada em DOCX.',
+    resumo_alteracoes: 'Versão consolidada exportada em DOCX.',
     criado_por: user.id,
     origem: 'manual'
   });
@@ -187,8 +186,8 @@ export async function GET(_request: Request, { params }: RouteContext) {
   }
 
   const docx = createSimpleDocx({
-    titulo: projeto.data.titulo,
-    ementa: projeto.data.ementa,
+    titulo,
+    ementa,
     minuta: minutaText,
     justificativa: justificativaText,
     autor,
@@ -196,12 +195,12 @@ export async function GET(_request: Request, { params }: RouteContext) {
     localData,
     casaLegislativa
   });
-  const filename = `${sanitizeFilename(projeto.data.titulo) || 'projeto-legislativo'}.docx`;
+  const filename = `${sanitizeFilename(titulo) || 'projeto-legislativo'}.docx`;
   const encodedFilename = encodeURIComponent(filename);
 
   return new Response(new Uint8Array(docx), {
     headers: {
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document; charset=utf-8',
       'Content-Disposition': `attachment; filename="projeto-legislativo.docx"; filename*=UTF-8''${encodedFilename}`,
       'Cache-Control': 'no-store'
     }
