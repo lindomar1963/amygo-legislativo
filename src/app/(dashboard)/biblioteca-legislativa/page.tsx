@@ -1,3 +1,4 @@
+import { NormaImportForm } from '@/components/biblioteca/norma-import-form';
 import { NormaForm } from '@/components/biblioteca/norma-form';
 import { NormasList } from '@/components/biblioteca/normas-list';
 import { getBibliotecaNormas } from '@/lib/data/biblioteca';
@@ -33,6 +34,7 @@ export default async function BibliotecaLegislativaPage() {
         </section>
       ) : (
         <>
+          <NormaImportForm />
           <NormaForm />
           <NormasList normas={normas} />
         </>
