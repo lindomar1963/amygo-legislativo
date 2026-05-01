@@ -8,7 +8,7 @@ export default async function DashboardPage() {
       <header className="page-header">
         <p className="eyebrow">Painel institucional</p>
         <h1>Dashboard</h1>
-        <p className="muted">Visão geral operacional dos módulos legislativos.</p>
+        <p className="muted">Visão geral da operação legislativa do gabinete contratado.</p>
       </header>
 
       <section className="stats-grid">
@@ -16,9 +16,9 @@ export default async function DashboardPage() {
           <div className="stat-icon" aria-hidden="true">
             G
           </div>
-          <h3>Gabinetes</h3>
+          <h3>Gabinetes ativos</h3>
           <p className="stat-value">{summary.totalGabinetes}</p>
-          <p className="muted">Estruturas políticas vinculadas</p>
+          <p className="muted">Ambientes institucionais vinculados</p>
         </article>
         <article className="card stat-card stat-projetos">
           <div className="stat-icon" aria-hidden="true">

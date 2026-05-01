@@ -2,12 +2,15 @@ import type { ReactNode } from 'react';
 
 import { signOut } from '@/app/(auth)/login/actions';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
+import { getCurrentUserContext } from '@/lib/data/current-user';
 
 type DashboardShellProps = {
   children: ReactNode;
 };
 
-export function DashboardShell({ children }: DashboardShellProps) {
+export async function DashboardShell({ children }: DashboardShellProps) {
+  const { isPlatformAdmin, profile } = await getCurrentUserContext();
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -18,7 +21,11 @@ export function DashboardShell({ children }: DashboardShellProps) {
             <div className="brand-subtitle">Inteligência institucional</div>
           </div>
         </div>
-        <SidebarNav />
+        <SidebarNav isPlatformAdmin={isPlatformAdmin} />
+        <div className="sidebar-context" aria-label="Perfil de acesso">
+          <span>{isPlatformAdmin ? 'Admin Amygo' : 'Ambiente do gabinete'}</span>
+          {profile?.nome ? <strong>{profile.nome}</strong> : null}
+        </div>
         <form action={signOut} className="sidebar-footer">
           <button type="submit" className="button button-secondary" style={{ width: '100%' }}>
             Sair

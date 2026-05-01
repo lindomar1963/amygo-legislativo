@@ -11,7 +11,10 @@ export default async function ProjetosLegislativosPage() {
       <header className="page-header">
         <p className="eyebrow">Pipeline legislativo</p>
         <h1>Projetos Legislativos</h1>
-        <p className="muted">Listagem central de projetos por gabinete, tipo e status de tramitação interna.</p>
+        <p className="muted">
+          A equipe trabalha dentro do gabinete contratado, criando proposições, minutas, justificativas e
+          documentos para protocolo.
+        </p>
       </header>
 
       <ProjetoForm gabinetes={gabinetes} />

@@ -245,6 +245,29 @@ tbody tr:hover {
   margin-top: auto;
 }
 
+.sidebar-context {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.85rem;
+  color: var(--muted);
+  background: rgba(0, 128, 128, 0.08);
+  border: 1px solid rgba(0, 128, 128, 0.22);
+  border-radius: var(--radius-md);
+}
+
+.sidebar-context span {
+  color: var(--cyan);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sidebar-context strong {
+  color: var(--white);
+  font-size: 0.9rem;
+}
+
 .content-shell {
   min-width: 0;
   background:

@@ -29,6 +29,7 @@ export function ProjetoForm({ gabinetes }: { gabinetes: Gabinete[] }) {
   const router = useRouter();
   const [state, action] = useActionState(createProjeto, initialState);
   const hasGabinetes = gabinetes.length > 0;
+  const defaultGabineteId = gabinetes.length === 1 ? gabinetes[0].id : '';
 
   useEffect(() => {
     if (state.success) {
@@ -51,10 +52,10 @@ export function ProjetoForm({ gabinetes }: { gabinetes: Gabinete[] }) {
           required
           disabled={!hasGabinetes}
           aria-invalid={Boolean(state.fieldErrors?.gabinete_id)}
-          defaultValue=""
+          defaultValue={defaultGabineteId}
         >
           <option value="" disabled>
-            Selecione o gabinete
+            Selecione o gabinete contratado
           </option>
           {gabinetes.map((gabinete) => (
             <option key={gabinete.id} value={gabinete.id}>
@@ -104,7 +105,12 @@ export function ProjetoForm({ gabinetes }: { gabinetes: Gabinete[] }) {
         {state.fieldErrors?.ementa ? <p className="field-error">{state.fieldErrors.ementa[0]}</p> : null}
       </div>
 
-      {!hasGabinetes ? <p className="muted">Cadastre um gabinete antes de criar projetos legislativos.</p> : null}
+      {!hasGabinetes ? (
+        <p className="notice notice-warning">
+          Este acesso ainda não está vinculado a um gabinete contratado. A Amygo precisa ativar o ambiente do
+          parlamentar antes da equipe criar projetos legislativos.
+        </p>
+      ) : null}
 
       <div aria-live="polite" role="status">
         {state.error ? <p className="notice notice-danger">{state.error}</p> : null}

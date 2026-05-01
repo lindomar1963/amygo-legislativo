@@ -11,17 +11,6 @@ import type { Database } from '@/types/database';
 
 type GabineteInsert = Database['public']['Tables']['gabinetes']['Insert'];
 
-const gabineteSchema = z.object({
-  [GABINETE_FIELD_NAMES.nome]: z.string().trim().min(1, 'Nome é obrigatório.'),
-  [GABINETE_FIELD_NAMES.esfera]: z.enum(['municipal', 'estadual', 'federal'], {
-    errorMap: () => ({ message: 'Esfera inválida.' })
-  }),
-  [GABINETE_FIELD_NAMES.orgaoCasaLegislativa]: z
-    .string()
-    .trim()
-    .min(1, 'Órgão/Casa legislativa é obrigatório.')
-});
-
 export type CreateGabineteState = {
   success?: string;
   error?: string;
@@ -32,44 +21,54 @@ export type CreateGabineteState = {
   };
 };
 
+const gabineteSchema = z.object({
+  [GABINETE_FIELD_NAMES.nome]: z.string().trim().min(1),
+  [GABINETE_FIELD_NAMES.esfera]: z.enum(['municipal', 'estadual', 'federal']),
+  [GABINETE_FIELD_NAMES.orgaoCasaLegislativa]: z.string().trim().min(1)
+});
+
 export async function createGabinete(
-  _prevState: CreateGabineteState | null,
+  _prevState: CreateGabineteState,
   formData: FormData
 ): Promise<CreateGabineteState> {
   const parsed = gabineteSchema.safeParse({
-    [GABINETE_FIELD_NAMES.nome]: String(formData.get(GABINETE_FIELD_NAMES.nome) ?? ''),
-    [GABINETE_FIELD_NAMES.esfera]: String(formData.get(GABINETE_FIELD_NAMES.esfera) ?? ''),
-    [GABINETE_FIELD_NAMES.orgaoCasaLegislativa]: String(formData.get(GABINETE_FIELD_NAMES.orgaoCasaLegislativa) ?? '')
+    nome: String(formData.get(GABINETE_FIELD_NAMES.nome) ?? ''),
+    esfera: String(formData.get(GABINETE_FIELD_NAMES.esfera) ?? ''),
+    orgao_casa_legislativa: String(formData.get(GABINETE_FIELD_NAMES.orgaoCasaLegislativa) ?? '')
   });
 
   if (!parsed.success) {
     return {
-      error: 'Revise os campos obrigatórios.',
+      error: 'Revise os campos do gabinete contratado.',
       fieldErrors: parsed.error.flatten().fieldErrors
     };
   }
 
   const supabase = await createClient();
+
   const {
-    data: { user },
-    error: userError
+    data: { user }
   } = await supabase.auth.getUser();
 
-  if (userError || !user) {
-    return { error: 'Sessão expirada. Entre novamente para criar o gabinete.' };
+  if (!user) {
+    return { error: 'Usuário não autenticado.' };
   }
 
-  let admin;
-  try {
-    admin = createAdminClient();
-    await ensureUserProfile(admin, user);
-  } catch (error) {
-    return {
-      error: error instanceof Error ? error.message : 'Não foi possível preparar a criação do gabinete.'
-    };
+  const admin = createAdminClient();
+
+  await ensureUserProfile(admin, user);
+
+  const { data: profile, error: profileError } = await admin
+    .from('users')
+    .select('papel_global')
+    .eq('id', user.id)
+    .single();
+
+  if (profileError || profile?.papel_global !== 'admin_plataforma') {
+    return { error: 'Somente administradores da Amygo podem ativar gabinetes contratados.' };
   }
 
-  const gabineteToInsert: GabineteInsert = {
+  const gabineteInsert: GabineteInsert = {
     nome: parsed.data.nome,
     esfera: parsed.data.esfera,
     orgao_casa_legislativa: parsed.data.orgao_casa_legislativa,
@@ -78,14 +77,12 @@ export async function createGabinete(
 
   const { data: gabinete, error: gabineteError } = await admin
     .from('gabinetes')
-    .insert(gabineteToInsert)
+    .insert(gabineteInsert)
     .select('id')
     .single();
 
   if (gabineteError || !gabinete) {
-    return {
-      error: gabineteError?.message ?? 'Não foi possível criar o gabinete.'
-    };
+    return { error: `Não foi possível ativar o gabinete: ${gabineteError?.message ?? 'registro não retornado'}` };
   }
 
   const { error: membroError } = await admin.from('gabinetes_membros').insert({
@@ -98,12 +95,12 @@ export async function createGabinete(
   if (membroError) {
     await admin.from('gabinetes').delete().eq('id', gabinete.id);
 
-    return {
-      error: `Gabinete não criado: ${membroError.message}`
-    };
+    return { error: `Gabinete não ativado: ${membroError.message}` };
   }
 
   revalidatePath('/gabinetes');
+  revalidatePath('/dashboard');
+  revalidatePath('/projetos-legislativos');
 
-  return { success: 'Gabinete criado com sucesso.' };
+  return { success: 'Gabinete contratado ativado com sucesso.' };
 }

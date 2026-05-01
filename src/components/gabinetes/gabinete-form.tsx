@@ -4,10 +4,7 @@ import { useActionState, useEffect, useRef } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
 
-import {
-  createGabinete,
-  type CreateGabineteState
-} from '@/app/(dashboard)/gabinetes/actions';
+import { createGabinete, type CreateGabineteState } from '@/app/(dashboard)/gabinetes/actions';
 import { GABINETE_FIELD_NAMES } from '@/lib/gabinetes/form-fields';
 
 const initialState: CreateGabineteState = {};
@@ -18,7 +15,7 @@ function SubmitButton() {
 
   return (
     <button className="button" type="submit" form={gabineteFormId} disabled={pending}>
-      {pending ? 'Criando gabinete...' : 'Criar gabinete'}
+      {pending ? 'Ativando gabinete...' : 'Ativar gabinete contratado'}
     </button>
   );
 }
@@ -38,15 +35,19 @@ export function GabineteForm() {
   return (
     <form id={gabineteFormId} ref={formRef} action={action} className="card card-section">
       <div>
-        <p className="eyebrow">Cadastro</p>
-        <h2>Novo gabinete</h2>
+        <p className="eyebrow">Admin Amygo</p>
+        <h2>Ativar gabinete contratado</h2>
+        <p className="muted">
+          Use esta área para configurar o ambiente institucional do parlamentar antes de liberar o acesso da
+          equipe.
+        </p>
       </div>
 
       <div>
         <input
           className="input"
           name={GABINETE_FIELD_NAMES.nome}
-          placeholder="Nome do gabinete"
+          placeholder="Nome do parlamentar ou gabinete"
           required
           aria-invalid={Boolean(state.fieldErrors?.nome)}
         />
