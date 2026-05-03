@@ -32,7 +32,12 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isAuthRoute = request.nextUrl.pathname.startsWith('/login');
-  const isPrivateRoute = request.nextUrl.pathname.startsWith('/dashboard') || request.nextUrl.pathname.startsWith('/gabinetes') || request.nextUrl.pathname.startsWith('/projetos-legislativos');
+  const isPrivateRoute =
+    request.nextUrl.pathname.startsWith('/dashboard') ||
+    request.nextUrl.pathname.startsWith('/gabinetes') ||
+    request.nextUrl.pathname.startsWith('/projetos-legislativos') ||
+    request.nextUrl.pathname.startsWith('/biblioteca-legislativa') ||
+    request.nextUrl.pathname.startsWith('/equipe-licenca');
 
   if (!user && isPrivateRoute) {
     const url = request.nextUrl.clone();

@@ -7,5 +7,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/login', '/gabinetes/:path*', '/projetos-legislativos/:path*']
+  matcher: [
+    '/dashboard/:path*',
+    '/login',
+    '/gabinetes/:path*',
+    '/projetos-legislativos/:path*',
+    '/biblioteca-legislativa/:path*',
+    '/equipe-licenca/:path*'
+  ]
 };

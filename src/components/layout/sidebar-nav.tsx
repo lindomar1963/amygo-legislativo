@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import type { Route } from 'next';
 import { usePathname } from 'next/navigation';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: 'D' },
   { href: '/projetos-legislativos', label: 'Projetos Legislativos', icon: 'P' },
-  { href: '/biblioteca-legislativa', label: 'Biblioteca Legislativa', icon: 'B' }
+  { href: '/biblioteca-legislativa', label: 'Biblioteca Legislativa', icon: 'B' },
+  { href: '/equipe-licenca', label: 'Equipe e Licença', icon: 'E' }
 ] as const;
 
 const adminNavItems = [{ href: '/gabinetes', label: 'Ativação de Gabinetes', icon: 'A' }] as const;
@@ -24,7 +26,7 @@ export function SidebarNav({ isPlatformAdmin }: { isPlatformAdmin: boolean }) {
           <Link
             key={item.href}
             className="sidebar-link"
-            href={item.href}
+            href={item.href as Route}
             aria-current={isActive ? 'page' : undefined}
           >
             <span className="nav-icon" aria-hidden="true">

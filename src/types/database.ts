@@ -63,6 +63,24 @@ export type Database = {
           ativo?: boolean;
         }
       >;
+      gabinete_licencas: Table<
+        {
+          gabinete_id: string;
+          plano: 'essencial' | 'profissional' | 'institucional';
+          limite_usuarios: number;
+          limite_projetos_mes: number;
+          status: 'ativo' | 'suspenso' | 'cancelado';
+          created_at: string;
+          updated_at: string;
+        },
+        {
+          gabinete_id: string;
+          plano?: 'essencial' | 'profissional' | 'institucional';
+          limite_usuarios?: number;
+          limite_projetos_mes?: number;
+          status?: 'ativo' | 'suspenso' | 'cancelado';
+        }
+      >;
       biblioteca_normas: Table<
         {
           id: string;

@@ -12,13 +12,27 @@ import type { Database } from '@/types/database';
 type ProjetoInsert = Database['public']['Tables']['projetos_legislativos']['Insert'];
 
 const projetoSchema = z.object({
-  [PROJETO_FIELD_NAMES.gabineteId]: z.string().uuid('Selecione um gabinete válido.'),
-  [PROJETO_FIELD_NAMES.titulo]: z.string().trim().min(1, 'Título é obrigatório.'),
+  [PROJETO_FIELD_NAMES.gabineteId]: z.string().uuid('Selecione um gabinete valido.'),
+  [PROJETO_FIELD_NAMES.titulo]: z.string().trim().min(1, 'Titulo e obrigatorio.'),
   [PROJETO_FIELD_NAMES.tipo]: z.enum(PROJETO_TIPOS, {
-    errorMap: () => ({ message: 'Tipo de projeto inválido.' })
+    errorMap: () => ({ message: 'Tipo de projeto invalido.' })
   }),
   [PROJETO_FIELD_NAMES.ementa]: z.string().trim().optional()
 });
+
+function isMissingTableError(error: { code?: string; message?: string } | null) {
+  return Boolean(
+    error &&
+      (error.code === '42P01' ||
+        error.message?.includes('gabinete_licencas') ||
+        error.message?.includes('schema cache'))
+  );
+}
+
+function getMonthStartIso() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+}
 
 export type CreateProjetoState = {
   success?: string;
@@ -45,7 +59,7 @@ export async function createProjeto(
 
   if (!parsed.success) {
     return {
-      error: 'Revise os campos obrigatórios.',
+      error: 'Revise os campos obrigatorios.',
       fieldErrors: parsed.error.flatten().fieldErrors
     };
   }
@@ -57,7 +71,7 @@ export async function createProjeto(
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return { error: 'Sessão expirada. Entre novamente para criar o projeto.' };
+    return { error: 'Sessao expirada. Entre novamente para criar o projeto.' };
   }
 
   let admin;
@@ -66,7 +80,7 @@ export async function createProjeto(
     await ensureUserProfile(admin, user);
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : 'Não foi possível preparar a criação do projeto.'
+      error: error instanceof Error ? error.message : 'Nao foi possivel preparar a criacao do projeto.'
     };
   }
 
@@ -77,7 +91,37 @@ export async function createProjeto(
     .single();
 
   if (gabineteError || !gabinete) {
-    return { error: 'Selecione um gabinete vinculado ao seu usuário.' };
+    return { error: 'Selecione um gabinete vinculado ao seu usuario.' };
+  }
+
+  const [licencaResult, projetosMesResult] = await Promise.all([
+    supabase
+      .from('gabinete_licencas')
+      .select('limite_projetos_mes, status')
+      .eq('gabinete_id', parsed.data.gabinete_id)
+      .maybeSingle(),
+    supabase
+      .from('projetos_legislativos')
+      .select('id', { count: 'exact', head: true })
+      .eq('gabinete_id', parsed.data.gabinete_id)
+      .gte('created_at', getMonthStartIso())
+  ]);
+
+  if (licencaResult.error && !isMissingTableError(licencaResult.error)) {
+    return { error: `Nao foi possivel validar a licenca do gabinete: ${licencaResult.error.message}` };
+  }
+
+  if (projetosMesResult.error) {
+    return { error: `Nao foi possivel conferir o limite mensal de projetos: ${projetosMesResult.error.message}` };
+  }
+
+  const limiteProjetosMes = licencaResult.data?.limite_projetos_mes ?? 30;
+  if (licencaResult.data?.status && licencaResult.data.status !== 'ativo') {
+    return { error: 'A licenca deste gabinete nao esta ativa para criacao de novos projetos.' };
+  }
+
+  if ((projetosMesResult.count ?? 0) >= limiteProjetosMes) {
+    return { error: `Limite mensal de ${limiteProjetosMes} projetos atingido para este gabinete.` };
   }
 
   const projetoToInsert: ProjetoInsert = {
@@ -98,11 +142,12 @@ export async function createProjeto(
     .single();
 
   if (projetoError || !projeto) {
-    return { error: `Não foi possível criar o projeto: ${projetoError?.message ?? 'resposta sem projeto criado'}` };
+    return { error: `Nao foi possivel criar o projeto: ${projetoError?.message ?? 'resposta sem projeto criado'}` };
   }
 
   revalidatePath('/dashboard');
   revalidatePath('/projetos-legislativos');
+  revalidatePath('/equipe-licenca');
 
   return {
     success: 'Projeto legislativo criado com sucesso.',

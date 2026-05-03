@@ -10,6 +10,7 @@ import { ensureUserProfile } from '@/lib/users/ensure-user-profile';
 import type { Database } from '@/types/database';
 
 type GabineteInsert = Database['public']['Tables']['gabinetes']['Insert'];
+type GabineteLicencaInsert = Database['public']['Tables']['gabinete_licencas']['Insert'];
 
 export type CreateGabineteState = {
   success?: string;
@@ -26,6 +27,15 @@ const gabineteSchema = z.object({
   [GABINETE_FIELD_NAMES.esfera]: z.enum(['municipal', 'estadual', 'federal']),
   [GABINETE_FIELD_NAMES.orgaoCasaLegislativa]: z.string().trim().min(1)
 });
+
+function isMissingTableError(error: { code?: string; message?: string } | null) {
+  return Boolean(
+    error &&
+      (error.code === '42P01' ||
+        error.message?.includes('gabinete_licencas') ||
+        error.message?.includes('schema cache'))
+  );
+}
 
 export async function createGabinete(
   _prevState: CreateGabineteState,
@@ -51,7 +61,7 @@ export async function createGabinete(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: 'Usuário não autenticado.' };
+    return { error: 'Usuario nao autenticado.' };
   }
 
   const admin = createAdminClient();
@@ -82,7 +92,7 @@ export async function createGabinete(
     .single();
 
   if (gabineteError || !gabinete) {
-    return { error: `Não foi possível ativar o gabinete: ${gabineteError?.message ?? 'registro não retornado'}` };
+    return { error: `Nao foi possivel ativar o gabinete: ${gabineteError?.message ?? 'registro nao retornado'}` };
   }
 
   const { error: membroError } = await admin.from('gabinetes_membros').insert({
@@ -95,12 +105,29 @@ export async function createGabinete(
   if (membroError) {
     await admin.from('gabinetes').delete().eq('id', gabinete.id);
 
-    return { error: `Gabinete não ativado: ${membroError.message}` };
+    return { error: `Gabinete nao ativado: ${membroError.message}` };
+  }
+
+  const licencaInsert: GabineteLicencaInsert = {
+    gabinete_id: gabinete.id,
+    plano: 'essencial',
+    limite_usuarios: 6,
+    limite_projetos_mes: 30,
+    status: 'ativo'
+  };
+
+  const { error: licencaError } = await admin.from('gabinete_licencas').insert(licencaInsert);
+
+  if (licencaError && !isMissingTableError(licencaError)) {
+    await admin.from('gabinetes').delete().eq('id', gabinete.id);
+
+    return { error: `Gabinete nao ativado: ${licencaError.message}` };
   }
 
   revalidatePath('/gabinetes');
   revalidatePath('/dashboard');
   revalidatePath('/projetos-legislativos');
+  revalidatePath('/equipe-licenca');
 
   return { success: 'Gabinete contratado ativado com sucesso.' };
 }
