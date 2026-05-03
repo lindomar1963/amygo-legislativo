@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+import { env } from '@/lib/env';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { ensureUserProfile } from '@/lib/users/ensure-user-profile';
@@ -14,6 +15,7 @@ export type AddEquipeMembroState = {
   success?: string;
   error?: string;
   fieldErrors?: {
+    nome?: string[];
     email?: string[];
     papel_no_gabinete?: string[];
   };
@@ -21,7 +23,8 @@ export type AddEquipeMembroState = {
 
 const addEquipeMembroSchema = z.object({
   gabinete_id: z.string().uuid(),
-  email: z.string().trim().email('Informe um e-mail válido.'),
+  nome: z.string().trim().min(2, 'Informe o nome do membro.'),
+  email: z.string().trim().email('Informe um e-mail valido.'),
   papel_no_gabinete: z.enum(['assessor', 'revisor', 'leitor'])
 });
 
@@ -40,6 +43,7 @@ export async function addEquipeMembro(
 ): Promise<AddEquipeMembroState> {
   const parsed = addEquipeMembroSchema.safeParse({
     gabinete_id: String(formData.get('gabinete_id') ?? ''),
+    nome: String(formData.get('nome') ?? ''),
     email: String(formData.get('email') ?? '').toLowerCase(),
     papel_no_gabinete: String(formData.get('papel_no_gabinete') ?? '')
   });
@@ -57,7 +61,7 @@ export async function addEquipeMembro(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: 'Sessão expirada. Entre novamente para gerenciar a equipe.' };
+    return { error: 'Sessao expirada. Entre novamente para gerenciar a equipe.' };
   }
 
   const admin = createAdminClient();
@@ -70,7 +74,7 @@ export async function addEquipeMembro(
     .single();
 
   if (currentProfileError) {
-    return { error: `Não foi possível validar seu perfil: ${currentProfileError.message}` };
+    return { error: `Nao foi possivel validar seu perfil: ${currentProfileError.message}` };
   }
 
   const { data: currentMembership, error: membershipError } = await admin
@@ -81,7 +85,7 @@ export async function addEquipeMembro(
     .maybeSingle();
 
   if (membershipError) {
-    return { error: `Não foi possível validar seu vínculo ao gabinete: ${membershipError.message}` };
+    return { error: `Nao foi possivel validar seu vinculo ao gabinete: ${membershipError.message}` };
   }
 
   const isPlatformAdmin = currentProfile?.papel_global === 'admin_plataforma';
@@ -101,46 +105,75 @@ export async function addEquipeMembro(
   ]);
 
   if (countError) {
-    return { error: `Não foi possível conferir o limite de usuários: ${countError.message}` };
+    return { error: `Nao foi possivel conferir o limite de usuarios: ${countError.message}` };
   }
 
   let limiteUsuarios = 6;
   if (licencaResult.error && !isMissingTableError(licencaResult.error)) {
-    return { error: `Não foi possível conferir a licença: ${licencaResult.error.message}` };
+    return { error: `Nao foi possivel conferir a licenca: ${licencaResult.error.message}` };
   }
   if (licencaResult.data) {
     limiteUsuarios = licencaResult.data.limite_usuarios;
     if (licencaResult.data.status !== 'ativo') {
-      return { error: 'A licença deste gabinete não está ativa para inclusão de novos membros.' };
+      return { error: 'A licenca deste gabinete nao esta ativa para inclusao de novos membros.' };
     }
   }
 
   if ((membrosAtivos ?? 0) >= limiteUsuarios) {
-    return { error: `Limite de ${limiteUsuarios} usuários ativos atingido para este gabinete.` };
+    return { error: `Limite de ${limiteUsuarios} usuarios ativos atingido para este gabinete.` };
   }
 
   const { data: targetUser, error: targetUserError } = await admin
     .from('users')
-    .select('id, email')
+    .select('id, email, nome')
     .eq('email', parsed.data.email)
     .maybeSingle();
 
   if (targetUserError) {
-    return { error: `Não foi possível localizar o usuário: ${targetUserError.message}` };
+    return { error: `Nao foi possivel localizar o usuario: ${targetUserError.message}` };
   }
 
-  if (!targetUser) {
-    return {
-      error:
-        'Usuário ainda não encontrado no Amygo. Nesta versão, ele precisa acessar/criar conta antes de ser vinculado ao gabinete.'
-    };
+  let targetUserId = targetUser?.id;
+  let invited = false;
+
+  if (!targetUserId) {
+    const redirectTo = `${env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/login`;
+    const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
+      redirectTo,
+      data: {
+        nome: parsed.data.nome
+      }
+    });
+
+    if (inviteError || !inviteData.user) {
+      return {
+        error: `Nao foi possivel enviar convite ao membro: ${inviteError?.message ?? 'usuario nao retornado'}`
+      };
+    }
+
+    targetUserId = inviteData.user.id;
+    invited = true;
+
+    const { error: profileError } = await admin.from('users').upsert(
+      {
+        id: inviteData.user.id,
+        email: inviteData.user.email ?? parsed.data.email,
+        nome: parsed.data.nome,
+        papel_global: 'usuario'
+      },
+      { onConflict: 'id' }
+    );
+
+    if (profileError) {
+      return { error: `Convite enviado, mas o perfil do membro nao foi criado: ${profileError.message}` };
+    }
   }
 
   const papel: PapelNoGabinete = parsed.data.papel_no_gabinete;
   const { error: upsertError } = await admin.from('gabinetes_membros').upsert(
     {
       gabinete_id: parsed.data.gabinete_id,
-      user_id: targetUser.id,
+      user_id: targetUserId,
       papel_no_gabinete: papel,
       ativo: true
     },
@@ -148,11 +181,15 @@ export async function addEquipeMembro(
   );
 
   if (upsertError) {
-    return { error: `Não foi possível vincular o membro: ${upsertError.message}` };
+    return { error: `Nao foi possivel vincular o membro: ${upsertError.message}` };
   }
 
   revalidatePath('/equipe-licenca');
   revalidatePath('/dashboard');
 
-  return { success: 'Membro vinculado ao gabinete com sucesso.' };
+  return {
+    success: invited
+      ? 'Convite enviado e membro vinculado ao gabinete.'
+      : 'Membro vinculado ao gabinete com sucesso.'
+  };
 }

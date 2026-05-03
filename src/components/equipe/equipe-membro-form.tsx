@@ -13,7 +13,7 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
 
   return (
     <button className="button" type="submit" disabled={disabled || pending}>
-      {pending ? 'Vinculando membro...' : 'Vincular membro'}
+      {pending ? 'Enviando convite...' : 'Convidar membro'}
     </button>
   );
 }
@@ -44,13 +44,26 @@ export function AddEquipeMembroForm({
       <input type="hidden" name="gabinete_id" value={gabineteId} />
       <div>
         <p className="eyebrow">Adicionar membro</p>
-        <h3>Vincular usuário existente</h3>
+        <h3>Convidar membro da equipe</h3>
         <p className="muted">
-          Nesta etapa inicial, o usuário precisa já ter conta/perfil no Amygo para ser vinculado ao gabinete.
+          O chefe da equipe pode convidar assessores, revisores e leitores dentro do limite contratado.
         </p>
       </div>
 
       <div className="form-row-3">
+        <div>
+          <label htmlFor={`member-name-${gabineteId}`}>Nome</label>
+          <input
+            id={`member-name-${gabineteId}`}
+            className="input"
+            name="nome"
+            placeholder="Nome do membro"
+            disabled={limiteAtingido}
+            aria-invalid={Boolean(state.fieldErrors?.nome)}
+            required
+          />
+          {state.fieldErrors?.nome ? <p className="field-error">{state.fieldErrors.nome[0]}</p> : null}
+        </div>
         <div>
           <label htmlFor={`member-email-${gabineteId}`}>E-mail</label>
           <input
@@ -83,14 +96,13 @@ export function AddEquipeMembroForm({
             <p className="field-error">{state.fieldErrors.papel_no_gabinete[0]}</p>
           ) : null}
         </div>
-        <div className="form-action-cell">
-          <SubmitButton disabled={limiteAtingido} />
-        </div>
       </div>
 
-      {limiteAtingido ? (
-        <p className="notice notice-warning">Limite de usuários ativos atingido para esta licença.</p>
-      ) : null}
+      <div className="form-action-cell">
+        <SubmitButton disabled={limiteAtingido} />
+      </div>
+
+      {limiteAtingido ? <p className="notice notice-warning">Limite de usuários ativos atingido para esta licença.</p> : null}
       {state.error ? <p className="notice notice-danger">{state.error}</p> : null}
       {state.success ? <p className="notice notice-success">{state.success}</p> : null}
     </form>
