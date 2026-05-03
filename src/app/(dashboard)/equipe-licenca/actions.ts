@@ -14,6 +14,7 @@ type PapelNoGabinete = Database['public']['Tables']['gabinetes_membros']['Row'][
 export type AddEquipeMembroState = {
   success?: string;
   error?: string;
+  inviteLink?: string;
   fieldErrors?: {
     nome?: string[];
     email?: string[];
@@ -134,25 +135,29 @@ export async function addEquipeMembro(
   }
 
   let targetUserId = targetUser?.id;
-  let invited = false;
+  let inviteLink: string | undefined;
 
   if (!targetUserId) {
     const redirectTo = `${env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/login`;
-    const { data: inviteData, error: inviteError } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
-      redirectTo,
-      data: {
-        nome: parsed.data.nome
+    const { data: inviteData, error: inviteError } = await admin.auth.admin.generateLink({
+      type: 'invite',
+      email: parsed.data.email,
+      options: {
+        redirectTo,
+        data: {
+          nome: parsed.data.nome
+        }
       }
     });
 
-    if (inviteError || !inviteData.user) {
+    if (inviteError || !inviteData.user || !inviteData.properties?.action_link) {
       return {
-        error: `Nao foi possivel enviar convite ao membro: ${inviteError?.message ?? 'usuario nao retornado'}`
+        error: `Nao foi possivel gerar convite ao membro: ${inviteError?.message ?? 'link nao retornado'}`
       };
     }
 
     targetUserId = inviteData.user.id;
-    invited = true;
+    inviteLink = inviteData.properties.action_link;
 
     const { error: profileError } = await admin.from('users').upsert(
       {
@@ -165,7 +170,7 @@ export async function addEquipeMembro(
     );
 
     if (profileError) {
-      return { error: `Convite enviado, mas o perfil do membro nao foi criado: ${profileError.message}` };
+      return { error: `Convite gerado, mas o perfil do membro nao foi criado: ${profileError.message}` };
     }
   }
 
@@ -188,8 +193,9 @@ export async function addEquipeMembro(
   revalidatePath('/dashboard');
 
   return {
-    success: invited
-      ? 'Convite enviado e membro vinculado ao gabinete.'
-      : 'Membro vinculado ao gabinete com sucesso.'
+    success: inviteLink
+      ? 'Convite gerado e membro vinculado ao gabinete. Copie o link abaixo e envie ao membro.'
+      : 'Membro vinculado ao gabinete com sucesso.',
+    inviteLink
   };
 }

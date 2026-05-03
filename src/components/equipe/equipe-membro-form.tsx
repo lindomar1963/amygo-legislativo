@@ -13,7 +13,7 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
 
   return (
     <button className="button" type="submit" disabled={disabled || pending}>
-      {pending ? 'Enviando convite...' : 'Convidar membro'}
+      {pending ? 'Gerando convite...' : 'Gerar convite'}
     </button>
   );
 }
@@ -46,7 +46,8 @@ export function AddEquipeMembroForm({
         <p className="eyebrow">Adicionar membro</p>
         <h3>Convidar membro da equipe</h3>
         <p className="muted">
-          O chefe da equipe pode convidar assessores, revisores e leitores dentro do limite contratado.
+          O chefe da equipe pode gerar um link de convite para assessores, revisores e leitores dentro do limite
+          contratado.
         </p>
       </div>
 
@@ -105,6 +106,15 @@ export function AddEquipeMembroForm({
       {limiteAtingido ? <p className="notice notice-warning">Limite de usuários ativos atingido para esta licença.</p> : null}
       {state.error ? <p className="notice notice-danger">{state.error}</p> : null}
       {state.success ? <p className="notice notice-success">{state.success}</p> : null}
+      {state.inviteLink ? (
+        <div className="notice">
+          <label htmlFor={`invite-link-${gabineteId}`}>Link de convite</label>
+          <input id={`invite-link-${gabineteId}`} className="input" readOnly value={state.inviteLink} />
+          <p className="muted">
+            Este link funciona como credencial temporaria. Envie somente ao membro correto da equipe.
+          </p>
+        </div>
+      ) : null}
     </form>
   );
 }
